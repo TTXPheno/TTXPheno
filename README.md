@@ -50,6 +50,8 @@ python Tools/python/HyperPoly.py
 ```
 
 ## Using the Plot Scripts  
+
+#### Differential distributions
 General plots for gen-level and reco-level distributions can be made using the plot-script in
 ```
 plots/plotsLukas/gen_reco/skim_plots.py
@@ -94,3 +96,49 @@ Example command for a differential FisherInfo plot for the variable 'cpt' with a
 ``` 
 python skim_plots.py --sample fwlite_ttZ_ll_LO_order2_15weights_ref --detector CMS --version v1 --processFile ttZ_3l_paper --level reco  --selection lepSel3-onZ-njet3p-nbjet1p-Zpt0-leptonIso3 --backgrounds --noninfoSignal --luminosity 150   --leptonFlavor all --parameters cpQM 5 cpt 5 ctZ 5 ctZI 5 --scaleLumi --addFisherInformation --addFisherInformationBackground --binThreshold 100 --variables cpt  
 ``` 
+
+#### Fisher Information plots
+Fisher Information plots to study the sensitivity of parameters can be made using the plot-script in  
+```
+plots/plotsLukas/fisher_information/fisher_information.py  
+plots/plotsLukas/fisher_information/fisher_information_ev.py  
+``` 
+for ideal FI plots for different selections and the corresponding eigenvector/eigenvalue plots, respectively.  
+  
+Choose the following arguments for general settings  
+``` 
+--sample        (specify signal sample from TTXPheno/sample/python/benchmarks.py)  
+--detector      (choose the detector, e.g. CMS, ATLAS or phase2_CMS. Make sure the samples are there and have the naming \<samplename\>_\<detector\>)  
+--small         (use small sample for testing)  
+--version       (specify output directory)  
+--process       (specify the process (e.g. ttZ) to choose the variables from 'process_variables.py' an the imported settings from addons/\<process\>.py)  
+--level         (use 'gen' or 'reco', be carful you chose the right variables in read_variables in addons/\<processFile\>.py)  
+--selection     (specify selection string, see TTXPheno/Tools/python/cutinterpreter\<level\>.py for more details)  
+--luminosity    (define the luminosity to which the distribution is scaled to (e.g. 150))  
+``` 
+Choose the following arguments for BSM settings  
+``` 
+--parameters    (specify a point in BSM space for which the FI is evaluated. Do not specify to evaluate at SM point. Typically parameters is not used!)  
+--order         (specify polynomial order for BSM sample reweighting, strongly recommended: 2)  
+``` 
+Choose the following arguments for differential Fisher Information (FI) settings  
+``` 
+--variables    (choose the BSM variables to which the FisherInfo Matrix is reduced to. Typically choose a non-correlated subset of your variables)  
+--binThreshold (choose the minimum number of events per bin for the FI. If less, the FI is not considered for this bin! Used to set max. stat. error / bin)  
+--fpsScaling   (flag to normalize the bar-plot to the full-pre selection bar instead of the full bar without any selection settings)  
+``` 
+  
+Before you start:  
+Add your settings to "TTXPheno/Tools/python/user.py"  
+Make sure you have your setting file in 'addons/\<process\>.py' and 'process_variables.py'  
+Choose your selection according to the convention in 'TTXPheno/Tools/python/cutinterpreter\<level\>.py'  
+  
+Example command for a FisherInfo bar-plot for the subset of variables 'cpt cpQM ctZ ctZI' with at least 100 events per bin at the SM point (no parameters chosen) for the CMS detector. It is normalized to the full set of events, ttZ (3l) 13TeV L=150/fb on reco-level, no backgrounds are included (not possible with the script)  
+``` 
+python fisher_information.py --sample fwlite_ttZ_ll_LO_order2_15weights_ref --detector CMS --version v1 --process ttZ --level reco --selection lepSel3-onZ-njet3p-nbjet1p-Zpt0 --luminosity 150 --variables cpt cpQM ctZ ctZI --binThreshold 100  
+``` 
+  
+
+
+
+
