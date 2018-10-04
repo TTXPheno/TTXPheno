@@ -155,9 +155,6 @@ for var in plotVariables2D:
     sample.setSelectionString('1')
 
     var['coeff']       = w.getCoeffPlotFromDraw( sample, var['var'], var['binning'], selection_string, weightString=weightString, nEventsThresh=args.binThreshold )
-    print '2D'
-    print var['var']
-    print var['coeff']
     # add bin information to plot labels
     var['plotstring'] = 'fps + ' + var['plotstring'] + ' (%s bins)' %str(var['binning'][0])
     var['color']       = 30
@@ -167,9 +164,6 @@ for var in plotVariables3D:
     sample.setSelectionString('1')
 
     var['coeff']       = w.get2DCoeffPlotFromDraw( sample, var['var'], var['binning'], selection_string, weightString=weightString, nEventsThresh=args.binThreshold )
-    print '3D'
-    print var['var']
-    print var['coeff']
     # add bin information to plot labels
     var['plotstring'] = 'fps + ' + var['plotstring'] + ' (%s:%s bins)' %(str(var['binning'][0]), str(var['binning'][3]))
     var['color']       = 41
@@ -179,9 +173,6 @@ for var in plotVariables4D:
     sample.setSelectionString('1')
 
     var['coeff']       = w.get3DCoeffPlotFromDraw( sample, var['var'], var['binning'], selection_string, weightString=weightString, nEventsThresh=args.binThreshold )
-    print '4D'
-    print var['var']
-    print var['coeff']
     # add bin information to plot labels
     var['plotstring'] = 'fps + ' + var['plotstring'] + ' (%s:%s:%s bins)' %(str(var['binning'][0]), str(var['binning'][3]), str(var['binning'][6]))
     var['color']       = 45
