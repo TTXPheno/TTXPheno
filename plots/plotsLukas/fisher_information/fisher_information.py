@@ -43,7 +43,7 @@ argParser.add_argument('--selection',          action='store',      default='lep
 argParser.add_argument('--variables',          action='store',      default = [], type=str, nargs='+', help = "argument variables")
 argParser.add_argument('--parameters',         action='store',      default = [], type=str, nargs='+', help = "argument parameters")
 argParser.add_argument('--luminosity',         action='store',      default=150)
-argParser.add_argument('--binThreshold',       action='store',      default=100)
+argParser.add_argument('--binThreshold',       action='store',      default=0)
 argParser.add_argument('--fpsScaling',         action='store_true', help='Scale to full pre-selection')
 argParser.add_argument('--detector',           action='store',      default='CMS', nargs='?', choices=['CMS', 'ATLAS'], help='Which Delphes detector simulation?')
 
@@ -94,7 +94,7 @@ def get_reweight_function():
     '''
 
     def reweight( event, sample ):
-        return event.ref_lumiweight1fb * args.luminosity * event_factor
+        return event.ref_lumiweight1fb * float(args.luminosity) * float(event_factor)
 #        return sample.xsec * 1000 / sample.nEvents / event.p_C[0] * args.luminosity * event_factor
 
     return reweight

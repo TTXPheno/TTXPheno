@@ -44,7 +44,7 @@ argParser.add_argument('--selection',          action='store',      default='lep
 argParser.add_argument('--variables',          action='store',      default = [], type=str, nargs='+', help = "argument variables")
 argParser.add_argument('--parameters',         action='store',      default = [], type=str, nargs='+', help = "argument parameters")
 argParser.add_argument('--luminosity',         action='store',      default=150)
-argParser.add_argument('--binThreshold',       action='store',      default=100)
+argParser.add_argument('--binThreshold',       action='store',      default=0)
 argParser.add_argument('--fpsScaling',         action='store_true', help='Scale to full pre-selection')
 argParser.add_argument('--detector',           action='store',      default='CMS', nargs='?', choices=['CMS', 'ATLAS'], help='Which Delphes detector simulation?')
 
@@ -155,6 +155,9 @@ for var in plotVariables2D:
     sample.setSelectionString('1')
 
     var['coeff']       = w.getCoeffPlotFromDraw( sample, var['var'], var['binning'], selection_string, weightString=weightString, nEventsThresh=args.binThreshold )
+    print '2D'
+    print var['var']
+    print var['coeff']
     # add bin information to plot labels
     var['plotstring'] = 'fps + ' + var['plotstring'] + ' (%s bins)' %str(var['binning'][0])
     var['color']       = 30
@@ -164,6 +167,9 @@ for var in plotVariables3D:
     sample.setSelectionString('1')
 
     var['coeff']       = w.get2DCoeffPlotFromDraw( sample, var['var'], var['binning'], selection_string, weightString=weightString, nEventsThresh=args.binThreshold )
+    print '3D'
+    print var['var']
+    print var['coeff']
     # add bin information to plot labels
     var['plotstring'] = 'fps + ' + var['plotstring'] + ' (%s:%s bins)' %(str(var['binning'][0]), str(var['binning'][3]))
     var['color']       = 41
@@ -173,6 +179,9 @@ for var in plotVariables4D:
     sample.setSelectionString('1')
 
     var['coeff']       = w.get3DCoeffPlotFromDraw( sample, var['var'], var['binning'], selection_string, weightString=weightString, nEventsThresh=args.binThreshold )
+    print '4D'
+    print var['var']
+    print var['coeff']
     # add bin information to plot labels
     var['plotstring'] = 'fps + ' + var['plotstring'] + ' (%s:%s:%s bins)' %(str(var['binning'][0]), str(var['binning'][3]), str(var['binning'][6]))
     var['color']       = 45
@@ -207,12 +216,12 @@ plot_directory_ = os.path.join(\
     'full' if not args.fpsScaling else 'fps',
     )
 if not os.path.isdir(plot_directory_): os.makedirs(plot_directory_)
-if os.path.isfile(os.path.join(plot_directory_,'ev_file.log')): os.remove(os.path.join(plot_directory_,'ev_file.log'))
+#if os.path.isfile(os.path.join(plot_directory_,'ev_file.log')): os.remove(os.path.join(plot_directory_,'ev_file.log'))
 
 # Fill dictionaries with Eigenvalues and Eigenvectors
 for i,item in enumerate(data):
 
-    print_matrix = w.matrix_to_string( *w.get_total_fisherInformation_matrix( item['coeff'], inputvariables, **WC ) )
+    #print_matrix = w.matrix_to_string( *w.get_total_fisherInformation_matrix( item['coeff'], inputvariables, **WC ) )
 
     evs, evecs = np.linalg.eigh( w.get_total_fisherInformation_matrix( item['coeff'], inputvariables, **WC )[1] )
     evecs_frac = [ [ abs(entry)/sum(abs(vec)) for entry in vec ] for vec in evecs.T ]
@@ -220,15 +229,15 @@ for i,item in enumerate(data):
     item['evs'] = evs
     item['evecs_frac'] = evecs_frac
 
-    with open(os.path.join(plot_directory_,'ev_file.log'),'a') as f:
-        f.write('bin %i\n'%i)
-        f.write('matrix\n')
-        f.write(print_matrix)
-        f.write('\neval\n')
-        f.write('(' + '\t'.join([str(item) for item in evs]) + ')')
-        f.write('\nevec\n')
-        f.write('\n'.join(['(' + '\t'.join([str(el) for el in item]) + ')' for item in evecs.T]))
-        f.write('\n\n\n')
+#    with open(os.path.join(plot_directory_,'ev_file.log'),'a') as f:
+#        f.write('bin %i\n'%i)
+#        f.write('matrix\n')
+#        f.write(print_matrix)
+#        f.write('\neval\n')
+#        f.write('(' + '\t'.join([str(item) for item in evs]) + ')')
+#        f.write('\nevec\n')
+#        f.write('\n'.join(['(' + '\t'.join([str(el) for el in item]) + ')' for item in evecs.T]))
+#        f.write('\n\n\n')
 
 # Plots
 def drawPlot( log = False ): 
