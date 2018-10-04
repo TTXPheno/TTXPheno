@@ -133,9 +133,14 @@ Add your settings to "TTXPheno/Tools/python/user.py"
 Make sure you have your setting file in 'addons/\<process\>.py' and 'process_variables.py'  
 Choose your selection according to the convention in 'TTXPheno/Tools/python/cutinterpreter\<level\>.py'  
   
-Example command for a FisherInfo bar-plot for the subset of variables 'cpt cpQM ctZ ctZI' with at least 100 events per bin at the SM point (no parameters chosen) for the CMS detector. It is normalized to the full set of events, ttZ (3l) 13TeV L=150/fb on reco-level, no backgrounds are included (not possible with the script)  
+##### Be carefull:  
+if you choose a too high value for binThreshold, all bins are empty and the plot will fail!  
+if you choose a correlated SM-EFT parameter sub-set, the calculated values cancel and the plot will fail!  
+if you choose SM-EFT parameters with a vanishing interference term, the FI is zero at the SM point and the plot will fail at the SM point (choose a BSM point with --parameters)!  
+
+Example command for a FisherInfo bar-plot for the subset of variables 'cpt cpQM' with at least 100 events per bin at the SM point (no parameters chosen) for the CMS detector. It is normalized to the full set of events, ttZ (3l) 13TeV L=150/fb on reco-level, no backgrounds are included (not possible with the script)  
 ``` 
-python fisher_information.py --sample fwlite_ttZ_ll_LO_order2_15weights_ref --detector CMS --version v1 --process ttZ --level reco --selection lepSel3-onZ-njet3p-nbjet1p-Zpt0 --luminosity 150 --variables cpt cpQM ctZ ctZI --binThreshold 100  
+python fisher_information.py --sample fwlite_ttZ_ll_LO_order2_15weights_ref --detector CMS --version v1 --process ttZ --level reco --selection lepSel3-onZ-njet3p-nbjet1p-Zpt0 --luminosity 150 --variables cpt cpQM --binThreshold 100  
 ``` 
   
 
