@@ -32,6 +32,7 @@ argParser.add_argument('--sample',             action='store',      default='tt'
 argParser.add_argument('--pdf',                action='store',      default='1d0')
 argParser.add_argument('--small',              action='store_true',                                                                                  help='Run only on a small subset of the data?', )
 argParser.add_argument('--normalize',          action='store_true', default=False,                                                                   help="Normalize yields" )
+argParser.add_argument('--c',                  action='store',      default=0.1,                                                                     help="BSM fraction" )
 args = argParser.parse_args()
 
 # Logger
@@ -61,7 +62,18 @@ def drawObjects( lumi_scale ):
     return [tex.DrawLatex(*l) for l in lines] 
 
 if args.normalize:
-    scaling = { i:0 for i, _ in enumerate(hepSample.root_samples_dict.keys()) }
+    scaling = { i:0 for i in xrange(len(hepSample.root_samples_dict)) }
+else:
+    sigmaC  = (1-args.c)**2*hepSample.samples_dict['PP'].xSection + \
+              (1-args.c)*args.c*hepSample.samples_dict[args.pdf+'_GH'].xSection + \
+              (1-args.c)*args.c*hepSample.samples_dict[args.pdf+'_HG'].xSection + \
+              args.c**2*hepSample.samples_dict[args.pdf+'_HH'].xSection
+
+    hepSample.root_samples_dict['PP'].weight = lambda event, sample: (1-args.c)**2/sigmaC 
+    hepSample.root_samples_dict[args.pdf+'_GH'].weight = lambda event, sample: args.c*(1-args.c)/sigmaC 
+    hepSample.root_samples_dict[args.pdf+'_HG'].weight = lambda event, sample: args.c*(1-args.c)/sigmaC 
+    hepSample.root_samples_dict[args.pdf+'_HH'].weight = lambda event, sample: args.c**2/sigmaC 
+
 
 # Plotting
 def drawPlots( plots, mode ):
@@ -77,7 +89,7 @@ def drawPlots( plots, mode ):
             plotting.draw( plot,
 	                       plot_directory = plot_directory_,
                            extensions = extensions_,
-                           ratio = {'yRange': (0.2, 1.8), 'histos':[(i,0) for i, _ in enumerate(hepSample.root_samples_dict.keys())], 'texY':'Ratio'},
+                           ratio = {'yRange': (0.2, 1.8), 'histos':[(i,0) for i in xrange(len(hepSample.root_samples_dict)) ], 'texY':'Ratio'},
 #	                       ratio = None,
 	                       logX = False, logY = log, sorting = True,
 	                       yRange = (0.03, "auto") if log else (0.001, "auto"),

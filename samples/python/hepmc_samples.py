@@ -71,10 +71,10 @@ class HEPMCData(object):
                     if xsecs[0]!=self.samples_dict['PP'].xsec:
                         logger.waring( "Inconsistent PP cross sections! file: %s", os.path.join( directory, '1d0_%s_crosssections.txt'%pdf) )
 
-                self.samples_dict['PP'].xsec = xsecs[0]
-                self.samples_dict[pdf+"_GH"].xsec = xsecs[1]
-                self.samples_dict[pdf+"_HG"].xsec = xsecs[2]
-                self.samples_dict[pdf+"_HH"].xsec = xsecs[3]
+                self.samples_dict['PP'].xSection = xsecs[0]
+                self.samples_dict[pdf+"_GH"].xSection = xsecs[1]
+                self.samples_dict[pdf+"_HG"].xSection = xsecs[2]
+                self.samples_dict[pdf+"_HH"].xSection = xsecs[3]
                 self.samples_dict['PP'].nEvents = nEvents
                 self.samples_dict[pdf+"_GH"].nEvents = nEvents
                 self.samples_dict[pdf+"_HG"].nEvents = nEvents
