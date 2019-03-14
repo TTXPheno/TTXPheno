@@ -37,7 +37,6 @@ gridpack_dir = "/afs/hephy.at/data/llechner01/TTXPheno/gridpacks/"
 # signal samples with reference point
 
 gen_dir = "/afs/hephy.at/data/llechner02/TTXPheno/skims/gen/v18/delphes_card_CMS/"
-
 #fwlite_ttgammaLarge_LO_order2_15weights_ref_CMS              = Sample.fromDirectory("fwlite_ttgammaLarge_LO_order2_15weights_ref", texName = "ttgamma",  directory = [os.path.join( gen_dir, "fwlite_ttgammaLarge_LO_order2_15weights_ref" )])
 #fwlite_ttgammaLarge_LO_order2_15weights_ref_CMS.reweight_pkl = gridpack_dir + "18052018_ref/ttgamma/order2/ttgamma0j_rwgt_slc6_amd64_gcc630_CMSSW_9_3_0_tarball.pkl"
 #fwlite_ttgammaLarge_LO_order2_15weights_ref_CMS.nEvents      = 10000000
@@ -165,8 +164,8 @@ fwlite_WZ_lep_LO_order2_15weights_CMS.xsec              = 4.666 #WZTo3LNu_amcatn
 
 # signal samples with reference point
 
-gen_dir = "/afs/hephy.at/data/rschoefbeck01/TTXPheno/skims/gen/v23/"
-
+#gen_dir = "/afs/hephy.at/data/rschoefbeck01/TTXPheno/skims/gen/v23/"
+gen_dir = "/afs/hephy.at/data/rschoefbeck01/TTXPheno/skims/gen/RunII_v01/"
 #fwlite_ttgammaLarge_LO_order2_15weights_ref_phase2_CMS              = Sample.fromDirectory("fwlite_ttgammaLarge_LO_order2_15weights_ref", texName = "ttgamma",  directory = [os.path.join( gen_dir, "fwlite_ttgammaLarge_LO_order2_15weights_ref" )])
 #fwlite_ttgammaLarge_LO_order2_15weights_ref_phase2_CMS.reweight_pkl = gridpack_dir + "18052018_ref/ttgamma/order2/ttgamma0j_rwgt_slc6_amd64_gcc630_CMSSW_9_3_0_tarball.pkl"
 #fwlite_ttgammaLarge_LO_order2_15weights_ref_phase2_CMS.nEvents      = 10000000
