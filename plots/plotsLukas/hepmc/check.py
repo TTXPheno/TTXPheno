@@ -14,6 +14,7 @@ from TTXPheno.Tools.helpers              import getCollection, getObjDict
 
 # RootTools
 from RootTools.core.standard            import *
+from TTXPheno.samples.benchmarks        import *
 
 # Internal Imports
 from TTXPheno.Tools.user                import plot_directory
@@ -57,7 +58,7 @@ def drawObjects( lumi_scale ):
     tex.SetTextSize(0.04)
     tex.SetTextAlign(11) # align right
     lines = [
-      (0.15, 0.95, 'Higgs-PDF Simulation (%s)'%hepSample.name.replace("bar","")), 
+      (0.15, 0.95, 'Higgs-PDF Sim. (%s, c=%s)'%(hepSample.name.replace("bar",""), str(args.c))), 
       (0.65, 0.95, '%3.1f fb{}^{-1} (13 TeV)' %lumi_scale)
     ]
     return [tex.DrawLatex(*l) for l in lines] 
@@ -70,16 +71,41 @@ else:
               (1-args.c)*args.c*hepSample.samples_dict[args.pdf+'_HG'].xSection + \
               args.c**2*hepSample.samples_dict[args.pdf+'_HH'].xSection
 
-    hepSample.root_samples_dict['PP'].weight = lambda event, sample: nloXSec*(1-args.c)**2/sigmaC 
-    hepSample.root_samples_dict[args.pdf+'_GH'].weight = lambda event, sample: nloXSec*args.c*(1-args.c)/sigmaC 
-    hepSample.root_samples_dict[args.pdf+'_HG'].weight = lambda event, sample: nloXSec*args.c*(1-args.c)/sigmaC 
-    hepSample.root_samples_dict[args.pdf+'_HH'].weight = lambda event, sample: nloXSec*args.c**2/sigmaC 
+    hepSample.root_samples_dict['PP'].weight =           lambda event, sample: nloXSec*(1-args.c)**2/sigmaC
+    hepSample.root_samples_dict[args.pdf+'_GH'].weight = lambda event, sample: nloXSec*args.c*(1-args.c)/sigmaC
+    hepSample.root_samples_dict[args.pdf+'_HG'].weight = lambda event, sample: nloXSec*args.c*(1-args.c)/sigmaC
+    hepSample.root_samples_dict[args.pdf+'_HH'].weight = lambda event, sample: nloXSec*(args.c)**2/sigmaC
 
 
 # Plotting
 def drawPlots( plots, mode ):
+
+    # add signal histos to total histo
+    for plot in plots:
+        for hep_histo in plot.histos[1:-3]:
+            plot.histos[-2][0].Add(hep_histo[0])
+
+    # add bg histos to all
+    for plot in plots:
+        for bg_histo in plot.histos[-1]:
+            for signal_histos in plot.histos[:-1]:
+                signal_histos[0].Add(bg_histo)
+
+    for plot in plots:
+        for i_h, h in enumerate(plot.histos):
+            for j_hi, hi in enumerate(h):
+                if i_h == len(plot.histos)-1 or i_h == len(plot.histos)-2:
+                    # fill style for bg
+                    hi.style = styles.fillStyle(bgcolors[j_hi])
+                elif i_h == len(plot.histos)-3:
+                    # fill style for signal PP
+                    hi.style = styles.lineStyle( ROOT.kBlack, width=3  )
+                else:
+                    # fill style for signal Higgs
+                    hi.style = styles.lineStyle( colors.values()[i_h-2], width=2, dashed=True  )
+
     for log in [False, True]:
-        plot_directory_ = os.path.join( plot_directory, 'hepmc/comparison_%s'%args.version, sample_directory, args.selection, args.pdf, "c%s"%str(args.c).replace(".","p"), "log" if log else "lin" )
+        plot_directory_ = os.path.join( plot_directory, 'hepmc/checks_%s'%args.version, sample_directory, args.selection, args.pdf, "c%s"%str(args.c).replace(".","p"),"log" if log else "lin" )
 
         for plot in plots:
             if not max(l[0].GetMaximum() for l in plot.histos): 
@@ -90,7 +116,7 @@ def drawPlots( plots, mode ):
             plotting.draw( plot,
 	                       plot_directory = plot_directory_,
                            extensions = extensions_,
-                           ratio = {'yRange': (0.2, 1.8), 'histos':[(i,0) for i in xrange(len(hepSample.root_samples_dict)) ], 'texY':'Ratio'},
+#                           ratio = {'yRange': (0.2, 1.8), 'histos':[(i,len(mc)) for i in xrange(len(mc + hepSample.root_samples_dict.values())) ], 'texY':'Ratio'},
 #	                       ratio = None,
 	                       logX = False, logY = log, sorting = True,
 	                       yRange = (0.03, "auto") if log else (0.001, "auto"),
@@ -170,8 +196,6 @@ read_variables += [ "recoBj0_" + var for var in recoJetVarString.split(",") ]
 read_variables += [ "recoBj1_" + var for var in recoJetVarString.split(",") ]
 
 
-#colors
-colors = {'HH':ROOT.kOrange+10, 'HG':ROOT.kViolet+6, 'GH':ROOT.kBlue+2}
 
 def addBTag( event, sample ):
     event.jets = getCollection( event, 'recoJet', [ "bTag" ], 'nrecoJet' )
@@ -185,20 +209,7 @@ def makeObservables( event, sample ):
     event.lldR   = deltaR( { "pt":event.recoLep_pt[0], "eta":event.recoLep_eta[0], "phi":event.recoLep_phi[0] }, { "pt":event.recoLep_pt[0], "eta":event.recoLep_eta[0], "phi":event.recoLep_phi[0] } )
 
 def printObjects(event, sample):
-    #print "lep pt 0", event.recoLep_pt[0]
-    #print "lep pt 1", event.recoLep_pt[1]
-    #print "lep pt 2", event.recoLep_pt[3]
-    #print "lep eta 0", event.recoLep_eta[0]
-    #print "lep eta 1", event.recoLep_eta[1]
-    #print "lep eta 2", event.recoLep_eta[2]
-    #print "lep pdgid 0", event.recoLep_pdgId[0]
-    #print "lep pdgid 1", event.recoLep_pdgId[1]
-    #print "lep pdgid 2", event.recoLep_pdgId[2]
-    #print "Z mass", event.recoZ_mass
-    #print "nLep", event.nrecoLep
-    #print "nJet", event.nrecoJet
-    print "nBTag med", event.nBTag_medium
-    print "nBTag", event.nBTag
+    print "weight", event.lumiweight1fb
 
 
 # Sequence
@@ -208,26 +219,78 @@ sequence = [\
 #            printObjects,
            ]
 
+# Import samples
+sample_file     = "$CMSSW_BASE/python/TTXPheno/samples/benchmarks.py"
+loadedSamples   = imp.load_source( "samples", os.path.expandvars( sample_file ) )
+
+ttZSample       = getattr( loadedSamples, "fwlite_ttZ_ll_LO_order3_8weights" )
+ttSample        = getattr( loadedSamples, "fwlite_tt_full_LO_order2_15weights_CMS" )
+WZSample        = getattr( loadedSamples, "fwlite_WZ_lep_LO_order2_15weights_CMS" )
+ZGammaSample    = getattr( loadedSamples, "fwlite_Zgamma_LO_order2_15weights_CMS" )
+tWZSample       = getattr( loadedSamples, "fwlite_tWZ_LO_order2_15weights_CMS" )
+tWSample        = getattr( loadedSamples, "fwlite_tW_LO_order2_15weights_CMS" )
+tZqSample       = getattr( loadedSamples, "fwlite_tZq_LO_order2_15weights_CMS" )
+ttWSample       = getattr( loadedSamples, "fwlite_ttW_LO_order3_8weights" )
+ttgammaSample   = getattr( loadedSamples, "fwlite_ttgamma_bg_LO_order2_15weights_CMS" )
+
+# cross section correction (t and tbar)
+tWSample.weight = lambda event, sample: 2.
+
+if args.sample == "ttZ":
+    mc = [\
+          WZSample,
+#          ZGammaSample,
+#          ttSample,
+#          ttWSample,
+          ttgammaSample,
+          tZqSample,
+          tWZSample,
+#          tWSample,
+    ]
+else:
+    mc = [\
+          WZSample,
+          ZGammaSample,
+          ttZSample,
+          ttWSample,
+#          ttgammaSample,
+          tZqSample,
+          tWZSample,
+          tWSample,
+    ]
+
+#colors
+colors = {'PP':ROOT.kGreen+2, 'HH':ROOT.kOrange+10, 'HG':ROOT.kViolet+6, 'GH':ROOT.kBlue+2, 'ttZ':ROOT.kGray}
+bgcolors = [ ROOT.kRed+1, ROOT.kGreen+2, ROOT.kOrange+1, ROOT.kViolet+9, ROOT.kSpring-7, ROOT.kRed+2,  ROOT.kPink-9, ROOT.kBlue,  ROOT.kRed-7, ROOT.kRed-10, ROOT.kRed+3,  ROOT.kGreen-7, ROOT.kGreen-10 ]
+
+for i, s in enumerate(mc):
+    s.styles = styles.fillStyle( bgcolors[i] )
 
 lumi_scale = 136.6
-comparisonSamples = []
+stackList = [ ]
 
 # Sample definition
+totalSignal = []
 for name, sample in hepSample.root_samples_dict.iteritems():
-#    sample.weight         = get_reweight( param, sample )
-#    sample.read_variables = read_variables_EFT
-
     if name == "PP":
+        totSample = copy.deepcopy(sample)
+        totSample.texName = args.sample + " (total)"
         sample.texName = name
-        sample.style   = styles.lineStyle( ROOT.kBlack, width=3  )
-        comparisonSamples.insert( 0, [sample] )
+        stackList.insert( 0, [sample] )
     else:
         sample.texName = "%s (%s)" %(name.split("_")[1], name.split("_")[0].replace("d","."))
         sample.style   = styles.lineStyle( colors[name.split("_")[1]], width=2, dashed=True  )
-        comparisonSamples.append( [sample] )
+        stackList.append( [sample] )
+#    totalSignal.append(sample)
+#stackList.append( totalSignal )
 
-stack      = Stack( *comparisonSamples )
+stackList += [ [totSample] ]
+stackList += [ [ttZSample if args.sample == "ttZ" else ttSample] ]
+stackList += [ mc ]
+stack = Stack( *stackList )
 
+#for sample in stack.samples:
+#    print sample.name, sample.weightString
 eventScale = 1.
 if args.small:
     for sample in stack.samples:
@@ -236,7 +299,7 @@ if args.small:
         eventScale = 1./sample.normalization
         sample.addWeightString(eventScale)
 
-weight_ = lambda event, sample: event.lumiweight1fb*lumi_scale
+weight_ = lambda event, sample: lumi_scale * event.lumiweight1fb
 
 # Use some defaults (set defaults before you create/import list of Plots!!)
 Plot.setDefaults( stack=stack, weight=staticmethod( weight_ ), selectionString=cutInterpreter.cutString( args.selection ) )#, addOverFlowBin='upper' )

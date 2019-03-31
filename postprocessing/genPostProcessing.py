@@ -71,7 +71,7 @@ else:
 maxEvents = -1
 if args.small: 
     args.targetDir += "_small"
-    maxEvents=100 
+    #maxEvents=100 
     sample.files=sample.files[:1]
 
 xsec = sample.xsec
