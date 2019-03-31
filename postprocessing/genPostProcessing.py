@@ -67,7 +67,7 @@ else:
 maxEvents = -1
 if args.small: 
     args.targetDir += "_small"
-    maxEvents=100 
+    #maxEvents=100 
     sample.files=sample.files[:1]
 
 xsec = sample.xsec
@@ -164,7 +164,7 @@ variables     += ["genTop[%s]"%top_vars]
 # to be stored for each boson
 boson_read_varnames= [ 'pt', 'phi', 'eta', 'mass']
 # Z vector from gen collection
-variables     += ["genZ_pt/F", "genZ_phi/F", "genZ_eta/F", "genZ_mass/F", "genZ_cosThetaStar/F", "genZ_daughterPdg/I"]
+variables     += ["genZ_pt/F", "genZ_phi/F", "genZ_eta/F", "genZ_mass/F", "genZ_cosThetaStar/F", "genZ_daughterPdg/I", "genZ_motherPdgId/I", "hasZFromTop/I"]
 # Z vector from genleps
 variables     += ["genLepZ_pt/F", "genLepZ_phi/F", "genLepZ_eta/F", "genLepZ_mass/F", "genLepZ_lldPhi/F", "genLepZ_lldR/F","genLepZ_cosThetaStar/F", "genLepZ_daughterPdg/I", "genLepNonZ_l1_index/I"]
 variables     += ["genLepZ_l1_index/I", "genLepZ_l2_index/I", "genLepNonZ_l1_index/I", "genLepNonZ_l2_index/I"]
@@ -305,13 +305,26 @@ def filler( event ):
     search  = GenSearch( gp )
 
     # find heavy objects before they decay
-    genTops = map( lambda t:{var: getattr(t, var)() for var in top_varnames}, filter( lambda p:abs(p.pdgId())==6 and search.isLast(p),  gp) )
-
+    p_genTops =  filter( lambda p:abs(p.pdgId())==6 and search.isLast(p),  gp)
+    #for genTop in p_genTops:
+    #    first = search.ascend( genTop )
+    #    if first != genTop:
+    #        print "Top radiates",
+    #        for nDaughter in range( first.numberOfDaughters() ):
+    #            print nDaughter, first.daughter( nDaughter ).pdgId(),
+    #        print
+    #        print
+    genTops = map( lambda t:{var: getattr(t, var)() for var in top_varnames}, p_genTops )
     genTops.sort( key = lambda p:-p['pt'] )
     fill_vector_collection( event, "genTop", top_varnames, genTops ) 
 
     # generated Z's
-    genZs = filter( lambda p:abs(p.pdgId())==23 and search.isLast(p) and abs(p.daughter(0).pdgId()) in [11, 13], gp)
+    all_genZs = filter( lambda p:abs(p.pdgId())==23 and search.isLast(p) , gp )
+    for genZ in all_genZs:
+        if abs(search.ascend(genZ).mother(0).pdgId())==6:
+            event.hasZFromTop = 1
+
+    genZs = filter( lambda p: abs(p.daughter(0).pdgId()) in [11, 13], all_genZs )
     genZs.sort( key = lambda p: -p.pt() )
     if len(genZs)>0: 
         genZ = genZs[0]
@@ -323,7 +336,9 @@ def filler( event ):
     event.signalZ = 0    #ttZ with Z from gluon or top
     if genZ is not None:
 
-        if abs(search.ascend(genZ).mother(0).pdgId()) in [ 6, 21 ]:
+        a_Z = search.ascend(genZ)
+        event.genZ_motherPdgId = a_Z.mother(0).pdgId()
+        if abs(a_Z.mother(0).pdgId()) in [ 6, 21 ]:
             event.signalZ = 1    #ttZ with Z from gluon or top
 
         d1, d2 = genZ.daughter(0), genZ.daughter(1)
