@@ -1,4 +1,5 @@
 from TTXPheno.Analysis.Region import Region
+from math import pi
 
 def getRegionsFromThresholds(var, vals, gtLastThreshold = True):
     return [Region(var, (vals[i], vals[i+1])) for i in range(len(vals)-1)]
@@ -30,3 +31,11 @@ genttgammaRegionsSmall = getRegionsFromThresholds("genPhoton_pt[0]", [200,300])#
 recottZRegionsSmall = getRegions2D("recoZ_pt", [200,400], "recoZ_cosThetaStar", [-1,-0.6])# + [Region("recoZ_pt", (400, -1))]
 recottgammaRegionsSmall = getRegionsFromThresholds("recoPhoton_pt[0]", [200,300])# + [Region("recoPhoton_pt[0]", (300, -1))]
 
+recottZRegionsPTZ = getRegionsFromThresholds("recoZ_pt",  [0,40,80,120,160,200,240,280,320,360,400])
+recottZRegionsCos = getRegionsFromThresholds("recoZ_cosThetaStar",  [-1,-0.6,-0.2,0.2,0.6,1])
+recottZRegionsCosPTZ200 = getRegions2D("recoZ_pt", [200,-1], "recoZ_cosThetaStar",[-1,-0.6,-0.2,0.2,0.6,1] )
+
+recottZRegionsPTZOnly = getRegionsFromThresholds("recoZ_pt",  [0,100,200,400,-1])
+
+recottZRegionsHepMC   = getRegions2D("recoZ_pt", [0,100,200,400,-1], "recoZ_lldPhi", [0,pi/4.,pi/2.,3*pi/4.,pi])# + [Region("recoZ_pt", (400, -1))]
+recottZRegionsHepMC1l = getRegions2D("recoMet_pt", [0,100,200,400,600,-1], "recoJet_pt[0]", [0,100,200,400,-1])# + [Region("recoZ_pt", (400, -1))]

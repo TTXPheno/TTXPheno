@@ -8,6 +8,8 @@ import imp
 import pickle
 import ctypes
 import numpy as np
+import itertools
+import operator
 
 from math import sqrt
 # turn off graphics
@@ -51,11 +53,10 @@ argParser.add_argument('--small',              action='store_true', help='Run on
 argParser.add_argument('--contours',           action='store_true', help='draw 1sigma and 2sigma contour line?')
 argParser.add_argument('--smooth',             action='store_true', help='smooth histogram?')
 argParser.add_argument('--level',              action='store',     default='reco', nargs='?', choices=['reco', 'gen'], help='Which level of reconstruction? reco, gen')
-argParser.add_argument('--variables' ,         action='store',     default = ['ctZ', 'ctZI'], type=str, nargs=2, help = "argument plotting variables")
-argParser.add_argument('--binning',            action='store',     default = [1, -2, 2, 1, -2, 2], type=float, nargs=6, help = "argument parameters")
-argParser.add_argument('--zRange',             action='store',     default = [None, None], type=float, nargs=2, help = "argument parameters")
+argParser.add_argument('--variable' ,         action='store',     default = 'ctZ', type=str, nargs='?', help = "argument plotting variable")
+argParser.add_argument('--binning',            action='store',     default = [1, -2, 2], type=float, nargs=3, help = "argument parameters")
+argParser.add_argument('--yRange',             action='store',     default = [None, None], type=float, nargs=2, help = "argument parameters")
 argParser.add_argument('--luminosity',         action='store',     default=150, type=int, help='Luminosity for weighting the plots')
-argParser.add_argument('--scale',              action='store',     default=None, help='Luminosity for weighting the plots')
 argParser.add_argument('--cores',              action='store',     default=8, type=int, help='number of cpu cores for multicore processing')
 argParser.add_argument('--overwrite',          action='store_true', help='overwrite datafile?')
 argParser.add_argument('--binMultiplier',      action='store',     default=3, type=int, help='bin multiplication factor')
@@ -96,27 +97,17 @@ elif args.level == 'reco':
     # Import additional functions/classes specified for the level of reconstruction
     from TTXPheno.Tools.cutInterpreterReco import cutInterpreter
 
-#binning range
-binningX = args.binning[:3]
-binningY = args.binning[3:]
-
-if binningX[0] > 1:
-    xRange = np.linspace( binningX[1], binningX[2], int(binningX[0]), endpoint=False)
+if args.binning[0] > 1:
+    xRange = np.linspace( args.binning[1], args.binning[2], int(args.binning[0]), endpoint=False)
     xRange = [ el + 0.5 * ( xRange[1] - xRange[0] ) for el in xRange ]
 else:
-    xRange = [ 0.5 * ( binningX[1] + binningX[2] ) ]
-
-if binningY[0] > 1:
-    yRange = np.linspace( binningY[1], binningY[2], int(binningY[0]), endpoint=False)
-    yRange = [ el + 0.5 * ( yRange[1] - yRange[0] ) for el in yRange ]
-else:
-    yRange = [ 0.5 * ( binningY[1] + binningY[2] ) ]
+    xRange = [ 0.5 * ( args.binning[1] + args.binning[2] ) ]
 
 addon = []
 if args.statOnly: addon += ["statOnly"]
 if args.noExpUnc: addon += ["noExpUnc"]
 #save data file
-filename = '_'.join( ['nll', args.detector ] + args.sample.split('_')[1:3] + args.variables + map( str, args.binning ) + [ args.selection, str(args.luminosity), "14TeV" if args.scale14TeV else "13TeV" ] + addon ) + '.data'
+filename = '_'.join( ['nll', args.detector ] + args.sample.split('_')[1:3] + [args.variable] + map( str, args.binning ) + [ args.selection, str(args.luminosity), "14TeV" if args.scale14TeV else "13TeV" ] + addon ) + '.data'
 
 #do the calculation
 if not os.path.isfile('dat/' + filename) or args.overwrite:
@@ -129,11 +120,8 @@ if not os.path.isfile('dat/' + filename) or args.overwrite:
 
         ttXSample       = getattr( loadedSamples, args.sample + '_%s' %args.detector )
         WZSample        = getattr( loadedSamples, 'fwlite_WZ_lep_LO_order2_15weights_%s' %args.detector )
-    #    ttSample        = getattr( loadedSamples, 'fwlite_tt_full_LO_order2_15weights_%s' %args.detector )
-    #    tWSample        = getattr( loadedSamples, 'fwlite_tW_LO_order2_15weights_%s' %args.detector )
         tWZSample       = getattr( loadedSamples, 'fwlite_tWZ_LO_order2_15weights_%s' %args.detector )
         tZqSample       = getattr( loadedSamples, 'fwlite_tZq_LO_order2_15weights_%s' %args.detector )
-    #    ZgammaSample    = getattr( loadedSamples, 'fwlite_Zgamma_LO_order2_15weights_%s' %args.detector )
         ttgammaSample   = getattr( loadedSamples, 'fwlite_ttgamma_bg_LO_order2_15weights_%s' %args.detector )
 
         #if args.process.split('_')[0] == 'ttgamma':
@@ -141,10 +129,6 @@ if not os.path.isfile('dat/' + filename) or args.overwrite:
         #    ttgammaIsrSample.name = 'fwlite_ttgamma_ISR_LO_order2_15weights_ref'
 
         if args.process == 'ttZ_3l': bg = [ WZSample, tWZSample, tZqSample, ttgammaSample ]
-    #    if args.process == 'ttZ_3l': bg = [ WZSample, tWZSample, tZqSample ]
-        elif args.process == 'ttZ_4l': bg = [ WZSample, tWZSample, tZqSample, ttgammaSample ]
-        elif args.process == 'ttgamma_1l': bg = [ ttSample, tWSample, tWZSample, tZqSample, ZgammaSample ]
-        elif args.process == 'ttgamma_2l': bg = [ ttSample, tWSample, tWZSample, tZqSample, ZgammaSample ]
 
         def checkReferencePoint( sample ):
             ''' check if sample is simulated with a reference point
@@ -180,9 +164,8 @@ if not os.path.isfile('dat/' + filename) or args.overwrite:
             ttXSample.addSelectionString( "(nonIsoPhoton!=1)" ) 
             ttSample.addSelectionString(  "(nonIsoPhoton==1)" ) 
 
-        for var in args.variables:
-            if var not in ttXSample.weightInfo.variables and not (args.variables[0] == 'cuB' and args.variables[1] == 'cuW'):
-                raise ValueError('Input variable not in gridpack: %s' %var)
+        if args.variable not in ttXSample.weightInfo.variables:
+            raise ValueError('Input variable not in gridpack: %s' %args.variable)
 
         observation                    = {}
 
@@ -311,18 +294,10 @@ if not os.path.isfile('dat/' + filename) or args.overwrite:
         return ctZ, ctW
 
 
-    def calculation( variables ):
-    #def calculation( var1, var2 ):
+    def calculation( var ):
+        kwargs = { args.variable:var }
 
-        if args.variables[0] == 'cuB' and args.variables[1] == 'cuW':
-            var1, var2 = variables #cuB cuW
-            ctZ, ctW = cuBWtoctWZ( var1, var2 )
-            kwargs = { 'ctZ':ctZ, 'ctW':ctW }
-        else:
-            var1, var2 = variables
-            kwargs = { args.variables[0]:var1, args.variables[1]:var2 }
-
-        nameList = args.sample.split('_')[1:3] + args.variables + args.binning + [ args.level, args.version, args.order, args.luminosity, "14TeV" if args.scale14TeV else "13TeV", args.selection, 'small' if args.small else 'full', 'statOnly' if args.statOnly else 'fullUnc' if not args.noExpUnc else 'noExpUnc', var1, var2 ]
+        nameList = args.sample.split('_')[1:3] + [args.variable] + args.binning + [ args.level, args.version, args.order, args.luminosity, "14TeV" if args.scale14TeV else "13TeV", args.selection, 'small' if args.small else 'full', 'statOnly' if args.statOnly else 'fullUnc' if not args.noExpUnc else 'noExpUnc', var ]
         cardname = '%s_nll_card'%'_'.join( map( str, nameList ) )
         cardFilePath = os.path.join( cardfileLocation, cardname + '.txt' )
 
@@ -456,18 +431,16 @@ if not os.path.isfile('dat/' + filename) or args.overwrite:
 
         del c
 
-        return var1, var2, nll
+        return var, nll
 
     results = []
 
-    SM = calculation( (0, 0) )
+    SM = calculation( 0 )
 
-    for varX in xRange:
-        # do not run all calc in one pool, memory leak!!!
-        pool = Pool( processes = args.cores )
-        results += pool.map( calculation, [ (varX, varY) for varY in yRange ] )
-        pool.close()
-        del pool
+    pool = Pool( processes = args.cores )
+    results += pool.map( calculation, xRange )
+    pool.close()
+    del pool
 
     with open('tmp/'+filename, 'w') as f:
         for item in [SM]+results:
@@ -480,9 +453,8 @@ else:
     results = []
     for i, line in enumerate(data):
         vals = map( float, line.split('\n')[0].split(',') )
-        if args.scale is not None: vals[2] = vals[2]*float(args.scale)/float(args.luminosity)/2
         if i == 0:
-            if vals[0] != 0 or vals[1] != 0:
+            if vals[0] != 0:
                 raise ValueError('SM Point in data file is not valid!')
             SM = tuple( vals )
         else: results.append( tuple( vals ) )
@@ -490,122 +462,130 @@ else:
 
 #Plot
 
-#scale to SM
-results.sort( key = lambda res: ( abs(res[0]), abs(res[1]), res[2] ) )
-nll_SM = SM[2]
+results = [ (x, 2*(res-SM[1])) for x, res in results]
+results.sort( key = lambda res: res[0] )
 
-results = [ (x, y, 2*(result - nll_SM)) for x, y, result in results ]
-
-def toGraph2D( name, title, data ):
-    result = ROOT.TGraph2D( len(data) )
-    debug = ROOT.TGraph()
+def toGraph( name, title, data ):
+    result  = ROOT.TGraph( len(data) )
     result.SetName( name )
     result.SetTitle( title )
-    for i, datapoint in enumerate(data):
-        x, y, val = datapoint
-        result.SetPoint(i, x, y, val)
-        debug.SetPoint(i, x, y)
+    for j, datapoint in enumerate(data):
+        x, val = datapoint
+        result.SetPoint(j, x, val)
     c = ROOT.TCanvas()
     result.Draw()
-    debug.Draw()
     del c
     #res = ROOT.TGraphDelaunay(result)
-    return result, debug
+    return result
 
-#get TGraph2D from results list
-a, debug = toGraph2D( args.process, args.process, results )#res_dic)
-nxbins   = max(1, min(500, int(binningX[0])*int(args.binMultiplier)))
-nybins   = max(1, min(500, int(binningY[0])*int(args.binMultiplier)))
+# Plot ranges
+ranges = {'cpt':[-1.1,1.1], 'cpQM':[-1.1,1.1], 'ctZ':[-0.6,0.6], 'ctZI':[-0.6,0.6]}
 
-#re-bin
-hist = a.GetHistogram().Clone()
-a.SetNpx(nxbins)
-a.SetNpy(nybins)
-hist = a.GetHistogram().Clone()
+polString = "[0]*x**2+[1]*x**3+[2]*x**4+[3]*x**5+[4]*x**6"
+# get TGraph from results data list
+xhist = toGraph( args.process, args.process, results )
+func  = ROOT.TF1("func",polString,ranges[args.variable][0], ranges[args.variable][1] ) 
+xhist.Fit(func,"NO")
+x68min = func.GetX( 0.989, ranges[args.variable][0], 0 )
+x68max = func.GetX( 0.989, 0, ranges[args.variable][1] )
+x95min = func.GetX( 3.84, ranges[args.variable][0], 0 )
+x95max = func.GetX( 3.84, 0, ranges[args.variable][1] )
 
-#smoothing
-if args.smooth: hist.Smooth()
+xhist.SetLineWidth(0)
 
-cans = ROOT.TCanvas("can_%s"%args.process,"",500,500)
+func.SetFillColor(ROOT.kWhite)
+func.SetFillStyle(1001)
+func.SetLineWidth(3)
+func.SetLineColor(ROOT.kBlack)
+func.SetNpx(1000)
 
-#calculate contour lines (1sigma, 2sigma) for 2D
-contours = {'ttZ_3l': [2.28, 5.99]}
-if args.contours:
-    histsForCont = hist.Clone()
-    c_contlist = ((ctypes.c_double)*(len(contours[args.process])))(*contours[args.process])
-    histsForCont.SetContour(len(c_contlist),c_contlist)
-    histsForCont.Draw("contzlist")
-    cans.Update()
-    conts = ROOT.gROOT.GetListOfSpecials().FindObject("contours")
-    #cont_m2 = conts.At(0).Clone()
-    #cont_m1 = conts.At(1).Clone()
-    cont_p1 = conts.At(0).Clone()
-    cont_p2 = conts.At(1).Clone()
+print args.variable, '68', x68min, x68max
+print args.variable, '95', x95min, x95max
 
-pads = ROOT.TPad("pad_%s"%args.process,"",0.,0.,1.,1.)
-pads.SetRightMargin(0.20)
-pads.SetLeftMargin(0.14)
-pads.SetTopMargin(0.11)
-pads.Draw()
-pads.cd()
+ROOT.gStyle.SetPadLeftMargin(0.14)
+ROOT.gStyle.SetPadRightMargin(0.1)
+ROOT.gStyle.SetPadTopMargin(0.11)
 
-hist.Draw("colz")
+# Plot
+cans = ROOT.TCanvas("cans","cans",500,500)
 
-#draw contour lines
-if args.contours:
-    for conts in [cont_p2]:
-        for cont in conts:
-            cont.SetLineColor(ROOT.kOrange+7)
-            cont.SetLineWidth(3)
-#            cont.SetLineStyle(7)
-            cont.Draw("same")
-    for conts in [cont_p1]:
-        for cont in conts:
-            cont.SetLineColor(ROOT.kSpring-1)
-            cont.SetLineWidth(3)
-#            cont.SetLineStyle(7)
-            cont.Draw("same")
+if not None in args.yRange:
+    xhist.GetYaxis().SetRangeUser( args.yRange[0], args.yRange[1] )
+    xhist.GetXaxis().SetRangeUser( ranges[args.variable][0], ranges[args.variable][1] )
 
+func95 = ROOT.TF1("func95",polString, x95min,x95max ) 
+xhist.Fit(func95,"NO")
+func95.SetFillColor(ROOT.kOrange+7)
+func95.SetFillStyle(1001)
+func95.SetLineWidth(0)
+func95.SetNpx(1000)
 
-hist.GetZaxis().SetTitle("-2 #Delta ln L")
+func68 = ROOT.TF1("func68",polString, x68min,x68max ) 
+xhist.Fit(func68,"NO")
+func68.SetFillColor(ROOT.kSpring-1)
+func68.SetFillStyle(1001)
+func68.SetLineWidth(0)
+func68.SetNpx(1000)
 
-if not None in args.zRange:
-    hist.GetZaxis().SetRangeUser( args.zRange[0], args.zRange[1] )
-#    hist.GetXaxis().SetRangeUser( -0.3 , 0.3 )
-#    hist.GetYaxis().SetRangeUser( -0.3 , 0.3 )
-#    hist.GetXaxis().SetRangeUser( -1 , 1 )
-#    hist.GetYaxis().SetRangeUser( -1 , 1 )
-#    hist.GetXaxis().SetRangeUser( -8 , 12 )
-#    hist.GetYaxis().SetRangeUser( -8 , 12 )
+if not None in args.yRange:
+    func.GetYaxis().SetRangeUser( args.yRange[0], args.yRange[1] )
+    func.GetXaxis().SetRangeUser( ranges[args.variable][0], ranges[args.variable][1] )
+    func68.GetYaxis().SetRangeUser( args.yRange[0], args.yRange[1] )
+    func68.GetXaxis().SetRangeUser( ranges[args.variable][0], ranges[args.variable][1] )
+    func95.GetYaxis().SetRangeUser( args.yRange[0], args.yRange[1] )
+    func95.GetXaxis().SetRangeUser( ranges[args.variable][0], ranges[args.variable][1] )
 
+xhist.Draw("ALO")
+func.Draw("COSAME")
+func95.Draw("FOSAME")
+func68.Draw("FOSAME")
+#xhist.Draw("LOSAME")
+func.Draw("COSAME")
 
-if args.variables[0] == 'cuB' and args.variables[1] == 'cuW':
-    hist.GetXaxis().SetTitle('C^{(33)}_{uB} (#Lambda/TeV)^{2}' )
-    hist.GetYaxis().SetTitle('C^{(33)}_{uW} (#Lambda/TeV)^{2}' )
-else:
-    xTitle = args.variables[0].replace('c','C_{').replace('p','#phi').replace('M','') + '}' 
-    if 'I' in xTitle: xTitle = xTitle.replace('I','') + '^{[Im]}'
-    yTitle = args.variables[1].replace('c','C_{').replace('p','#phi').replace('M','') + '}' 
-    if 'I' in yTitle: yTitle = yTitle.replace('I','') + '^{[Im]}'
-    hist.GetXaxis().SetTitle( xTitle + ' (#Lambda/TeV)^{2}' )
-    hist.GetYaxis().SetTitle( yTitle + ' (#Lambda/TeV)^{2}' )
+# Redraw axis, otherwise the filled graphes overlay
+cans.RedrawAxis()
 
-hist.GetXaxis().SetTitleFont(42)
-hist.GetYaxis().SetTitleFont(42)
-hist.GetZaxis().SetTitleFont(42)
-hist.GetXaxis().SetLabelFont(42)
-hist.GetYaxis().SetLabelFont(42)
-hist.GetZaxis().SetLabelFont(42)
+# dashed line at 1
+line5 = ROOT.TLine(ranges[args.variable][0], 0.989, ranges[args.variable][1], 0.989 )
+line5.SetLineWidth(1)
+line5.SetLineStyle(7)
+line5.SetLineColor(ROOT.kBlack)
+# dashed line at 4
+line6 = ROOT.TLine(ranges[args.variable][0], 3.84, ranges[args.variable][1], 3.84 )
+line6.SetLineWidth(1)
+line6.SetLineStyle(7)
+line6.SetLineColor(ROOT.kBlack)
 
-hist.GetXaxis().SetTitleOffset(1.15)
-hist.GetYaxis().SetTitleOffset(1.25)
+line5.Draw()
+line6.Draw()
 
-hist.GetXaxis().SetTitleSize(0.045)
-hist.GetYaxis().SetTitleSize(0.045)
-hist.GetZaxis().SetTitleSize(0.042)
-hist.GetXaxis().SetLabelSize(0.04)
-hist.GetYaxis().SetLabelSize(0.04)
-hist.GetZaxis().SetLabelSize(0.04)
+cans.Update()
+xhist.GetYaxis().SetTitle("-2 #Delta ln L")
+
+leg = ROOT.TLegend(0.3,0.7,0.7,0.87)
+leg.SetBorderSize(0)
+leg.SetTextSize(0.038)
+leg.AddEntry(func,"log-likelihood ratio","l")
+leg.AddEntry(func68,"68% CL","f")
+leg.AddEntry(func95,"95% CL","f")
+leg.Draw()
+
+xTitle = args.variable.replace('c','C_{').replace('p','#phi').replace('M','') + '}' 
+if 'I' in xTitle: xTitle = xTitle.replace('I','') + '^{[Im]}'
+xhist.GetXaxis().SetTitle( xTitle + ' (#Lambda/TeV)^{2}' )
+
+xhist.GetXaxis().SetTitleFont(42)
+xhist.GetYaxis().SetTitleFont(42)
+xhist.GetXaxis().SetLabelFont(42)
+xhist.GetYaxis().SetLabelFont(42)
+
+xhist.GetXaxis().SetTitleOffset(1.3)
+xhist.GetYaxis().SetTitleOffset(1.3)
+
+xhist.GetXaxis().SetTitleSize(0.045)
+xhist.GetYaxis().SetTitleSize(0.045)
+xhist.GetXaxis().SetLabelSize(0.04)
+xhist.GetYaxis().SetLabelSize(0.04)
 
 latex1 = ROOT.TLatex()
 latex1.SetNDC()
@@ -613,21 +593,16 @@ latex1.SetTextSize(0.04)
 latex1.SetTextFont(42)
 latex1.SetTextAlign(11)
 
-latex1.DrawLatex(0.03, 0.92, '#bf{CMS Phase-2} #it{Simulation Preliminary}'),
-#latex1.DrawLatex(0.15, 0.95, '#bf{CMS Phase-2} #it{Simulation Preliminary}'),
-latex1.DrawLatex(0.68, 0.92, '%i ab{}^{-1} (%s TeV)' % (int(args.luminosity/1000.), "14" if args.scale14TeV else "13"))
+latex1.DrawLatex(0.03, 0.91, '#bf{CMS Phase-2} #it{Simulation Preliminary}'),
+latex1.DrawLatex(0.66, 0.91, '%i ab{}^{-1} (%s TeV)' % (int(args.luminosity/1000.), "14" if args.scale14TeV else "13"))
 
-latex2 = ROOT.TLatex()
-latex2.SetNDC()
-latex2.SetTextSize(0.04)
-latex2.SetTextFont(42)
-latex2.SetTextAlign(11)
+#latex2 = ROOT.TLatex()
+#latex2.SetNDC()
+#latex2.SetTextSize(0.04)
+#latex2.SetTextFont(42)
+#latex2.SetTextAlign(11)
 
-#latex2.DrawLatex(0.15, 0.9, 'with Stat. uncert. only' if args.statOnly else 'with YR18 syst. uncert.' if not args.noExpUnc else 'w/o Exp. uncert.'),
-if (args.noExpUnc or args.statOnly): latex2.DrawLatex(0.17, 0.82, 'Stat. uncert. only' if args.statOnly else 'w/o Exp. uncert.'),
-
-#latex1.DrawLatex(0.15, 0.92, ' '.join(args.process.split('_')[:2]) + ' (' + args.detector + ')')
-#latex1.DrawLatex(0.55, 0.92, '%3.1f fb{}^{-1} @ 13 TeV'%(float(args.luminosity) if args.scale is None else float(args.scale)) )
+#latex2.DrawLatex(0.15, 0.9, 'with Stat. uncert. only' if args.statOnly else 'with YR18 syst. uncert.' if not args.noExpUnc else 'with Stat. and Theory uncert. only'),
 
 plot_directory_ = os.path.join(\
     plot_directory,
@@ -635,12 +610,11 @@ plot_directory_ = os.path.join(\
     args.detector,
     args.sample,
     'backgrounds',
-    'nll_small' if args.small else 'nll',
+    '1Dnll_small' if args.small else '1Dnll',
     args.selection)
 
 if not os.path.isdir( plot_directory_ ):
     os.makedirs( plot_directory_ )
 
 for e in [".png",".pdf",".root"]:
-    cans.Print( plot_directory_ + '/' + '_'.join(args.variables + ['lumi'+str(args.luminosity) if args.scale is None else 'lumi'+str(args.scale), "14TeV" if args.scale14TeV else "13TeV", "CMScombine" if args.useCombine else "privateFit", "bestFit" if args.bestFit else "r1", 'statOnly' if args.statOnly else 'fullUnc' if not args.noExpUnc else 'noExpUnc']) + e)
-
+    cans.Print( plot_directory_ + '/' + '_'.join(['1D',args.variable,'lumi'+str(args.luminosity), "14TeV" if args.scale14TeV else "13TeV", "CMScombine" if args.useCombine else "privateFit", "bestFit" if args.bestFit else "r1", 'statOnly' if args.statOnly else 'fullUnc' if not args.noExpUnc else 'noExpUnc']) + e)
