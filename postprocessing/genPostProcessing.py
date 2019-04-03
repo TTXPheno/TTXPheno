@@ -263,6 +263,8 @@ def fill_vector( event, collection_name, collection_varnames, obj):
             raise e
 
 
+logger.info( "Running over files: %s", ", ".join(sample.files ) )
+
 if args.delphes:
     if args.delphesEra == 'RunII':
         from TTXPheno.Tools.DelphesReader          import DelphesReader

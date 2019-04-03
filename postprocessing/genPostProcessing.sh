@@ -11,10 +11,10 @@
 #python genPostProcessing.py --overwrite target --targetDir v23 --logLevel DEBUG --sample fwlite_ttZ_ll_LO_order2_15weights_ref --addReweights --interpolationOrder 2  --delphes --delphesCard CMS_PhaseII/CMS_PhaseII_200PU_v03 #SPLIT200
 
 ### ttZ background samples without reference point
-python genPostProcessing.py --overwrite target --targetDir v23 --logLevel DEBUG --sample fwlite_WZ_lep_LO_order2_15weights --interpolationOrder 2  --delphes --delphesCard CMS_PhaseII/CMS_PhaseII_200PU_v03 #SPLIT200
-python genPostProcessing.py --overwrite target --targetDir v23 --logLevel DEBUG --sample fwlite_tZq_LO_order2_15weights --interpolationOrder 2  --delphes --delphesCard CMS_PhaseII/CMS_PhaseII_200PU_v03 #SPLIT200
-python genPostProcessing.py --overwrite target --targetDir v23 --logLevel DEBUG --sample fwlite_tWZ_LO_order2_15weights --interpolationOrder 2  --delphes --delphesCard CMS_PhaseII/CMS_PhaseII_200PU_v03 #SPLIT200
-python genPostProcessing.py --overwrite target --targetDir v23 --logLevel DEBUG --sample fwlite_ttgamma_bg_LO_order2_15weights --interpolationOrder 2  --delphes --delphesCard CMS_PhaseII/CMS_PhaseII_200PU_v03 #SPLIT200
+#python genPostProcessing.py --overwrite target --targetDir v23 --logLevel DEBUG --sample fwlite_WZ_lep_LO_order2_15weights --interpolationOrder 2  --delphes --delphesCard CMS_PhaseII/CMS_PhaseII_200PU_v03 #SPLIT200
+#python genPostProcessing.py --overwrite target --targetDir v23 --logLevel DEBUG --sample fwlite_tZq_LO_order2_15weights --interpolationOrder 2  --delphes --delphesCard CMS_PhaseII/CMS_PhaseII_200PU_v03 #SPLIT200
+#python genPostProcessing.py --overwrite target --targetDir v23 --logLevel DEBUG --sample fwlite_tWZ_LO_order2_15weights --interpolationOrder 2  --delphes --delphesCard CMS_PhaseII/CMS_PhaseII_200PU_v03 #SPLIT200
+#python genPostProcessing.py --overwrite target --targetDir v23 --logLevel DEBUG --sample fwlite_ttgamma_bg_LO_order2_15weights --interpolationOrder 2  --delphes --delphesCard CMS_PhaseII/CMS_PhaseII_200PU_v03 #SPLIT200
 
 
 
@@ -38,7 +38,8 @@ python genPostProcessing.py --overwrite target --targetDir v23 --logLevel DEBUG 
 #python genPostProcessing.py --targetDir RunII_v01 --logLevel DEBUG --interpolationOrder 2  --delphes --delphesEra RunII --sample fwlite_tWZ_LO_order2_15weights #SPLIT200
 #python genPostProcessing.py --targetDir RunII_v01 --logLevel DEBUG --interpolationOrder 2  --delphes --delphesEra RunII --sample fwlite_Zgamma_LO_order2_15weights #SPLIT200
 #python genPostProcessing.py --targetDir RunII_v01 --logLevel DEBUG --interpolationOrder 2  --delphes --delphesEra RunII --sample fwlite_ttZ_ll_LO_order3_8weights #SPLIT200
-python genPostProcessing.py --targetDir RunII_v01 --logLevel DEBUG --interpolationOrder 2  --delphes --delphesEra RunII --sample fwlite_ttZ_ll_LO_order2_15weights_ref_ext #SPLIT2000
+python genPostProcessing.py --targetDir RunII_v01 --logLevel DEBUG --addReweights --interpolationOrder 2  --delphes --delphesEra RunII --sample fwlite_ttZ_ll_LO_order2_15weights_ref_ext #SPLIT1989
+python genPostProcessing.py --targetDir RunII_v01 --logLevel DEBUG --addReweights --interpolationOrder 2  --delphes --delphesEra RunII --sample fwlite_ttZ_ll_LO_order2_15weights_ref #SPLIT200
 #python genPostProcessing.py --targetDir RunII_v01 --logLevel DEBUG --interpolationOrder 2  --delphes --delphesEra RunII --sample fwlite_ttW_LO_order3_8weights #SPLIT200
 #python genPostProcessing.py --targetDir RunII_v01 --logLevel DEBUG --interpolationOrder 2  --delphes --delphesEra RunII --sample fwlite_ttgamma_bg_LO_order2_15weights #SPLIT200
 
