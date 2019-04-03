@@ -7,13 +7,12 @@ import scipy.special
 import scipy.linalg
 import itertools
 from math import *
+import numpy as np
 
 # TTXPheno
 import TTXPheno.Tools.helpers as helpers
 
 from operator import mul
-
-import numpy as np
 
 # Logger
 import logging
@@ -45,6 +44,9 @@ class WeightInfo:
         self.id = self.data.keys()
         self.id.sort(key=lambda w: self.data[w])
         self.nid = len(self.id)
+
+        # default float type
+        self.float_type = np.float32
 
         logger.debug( "Found %i variables: %s. Found %i weights." %(self.nvar, ",".join( self.variables ), self.nid) )
 
@@ -214,7 +216,6 @@ class WeightInfo:
     def getFisherInformationHisto( self, sample, variableString, binning, selectionString = None, weightString = None, variables = None, nEventsThresh = 0, **kwargs ):
         ''' Create a histogram showing the fisher information for each bin of the given kinematic distribution
         '''
-        from array import array
         import ROOT
 
 #        # add the arguments from the ref-point 
@@ -232,7 +233,7 @@ class WeightInfo:
 #            detIList = [ detI * norm for detI in detIList ]
 
         expo = 1. / len(variables)
-        y_graph = array( 'd', [ abs(detI)**expo for detI in detIList ] )
+        y_graph = np.array( [ abs(detI)**expo for detI in detIList ], dtype=self.float_type)
 
         paramNameList = kwargs.keys() if len(kwargs.keys())!=0 else ['SM']
         histoName = 'histo_%s_%s'%(variableString,'_'.join( variables + ['params'] + paramNameList ))
@@ -445,7 +446,7 @@ class WeightInfo:
         '''
 
         # check if coeffList is filled with 0
-        if all([ v == 0 for v in coeffList ]): return variables, np.zeros( ( len(variables), len(variables) ) )
+        if all([ v == 0 for v in coeffList ]): return variables, np.zeros( ( len(variables), len(variables) ), dtype=self.float_type )
 
         # If no argument given, provide all
         if variables is None: variables = self.variables
@@ -455,7 +456,7 @@ class WeightInfo:
 
         # initialize FI matrix with 1/weight (same for all entries)
         weight_yield = self.get_weight_yield( coeffList, **kwargs ) 
-        fi_matrix = np.full( ( len(variables), len(variables) ), 1. / weight_yield if weight_yield != 0 else 0)
+        fi_matrix = np.full( ( len(variables), len(variables) ), 1. / weight_yield if weight_yield != 0 else 0, dtype = self.float_type)
 
         for i, var_i in enumerate(variables):
             for j, var_j in enumerate(variables):
@@ -500,7 +501,7 @@ class WeightInfo:
 #
 #        ## initialize FI matrix with 1/weight (same for all entries)
 #        #weight_yield = self.get_weight_yield( coeffList, **kwargs ) 
-#        #fi_matrix = np.full( ( len(variables), len(variables) ), 1. / weight_yield if weight_yield != 0 else 0)
+#        #fi_matrix = np.full( ( len(variables), len(variables) ), 1. / weight_yield if weight_yield != 0 else 0, dtype = self.float_type)
 #
 #        #for i, var_i in enumerate(variables):
 #        #    for j, var_j in enumerate(variables):
@@ -542,7 +543,7 @@ class WeightInfo:
             metric_inverse = scipy.linalg.inv( metric ) 
 
             # 3D zeros
-            christoffel = np.zeros( (len(_variables), len(_variables) ) )
+            christoffel = np.zeros( (len(_variables), len(_variables) ), self.float_type)
 
             for coeffList in coeffLists:
                 weight_yield       = self.get_weight_yield( coeffList, **kwargs_ )

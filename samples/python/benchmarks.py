@@ -184,15 +184,15 @@ fwlite_WZ_lep_LO_order2_15weights_CMS.xsec              = 4.666 #WZTo3LNu_amcatn
 #fwlite_ttgammaLarge_LO_order2_15weights_ref_phase2_CMS.xsec         = 7.092 * 3.697 / 2.302 #pb ttgamma gridpack * ttgamma NLO Daniel / ttgamma LO run.py UFO
 #check
 
-# reference point 15/2
-fwlite_ttZ_ll_LO_order2_15weights_ref_phase2_CMS               = Sample.fromDirectory("fwlite_ttZ_ll_LO_order2_15weights_ref",  texName = "ttZ",      directory = [os.path.join( gen_dir, "fwlite_ttZ_ll_LO_order2_15weights_ref" )]) 
-fwlite_ttZ_ll_LO_order2_15weights_ref_phase2_CMS.reweight_pkl  = gridpack_dir + "18052018_ref/ttZ/order2/ttZ0j_rwgt_slc6_amd64_gcc630_CMSSW_9_3_0_tarball.pkl"
-fwlite_ttZ_ll_LO_order2_15weights_ref_phase2_CMS.nEvents       = 990000
-fwlite_ttZ_ll_LO_order2_15weights_ref_phase2_CMS.xsec          = 0.5205 * (0.0915 / 0.0565) #pb ttZ, Z->ll, ttZ gridpack * ttZ NLO Daniel / ttZ LO run.py UFO
-fwlite_ttZ_ll_LO_order2_15weights_ref_phase2_CMS.xsec14        = 0.5205 * (0.0915 / 0.0565) * (0.7152 / 0.616) #pb ttZ, Z->ll, ttZ gridpack * ttZ NLO Daniel / ttZ LO run.py UFO * ttZ jets 14 TeV / ttZ jets 13 TeV
+## reference point 15/2
+#fwlite_ttZ_ll_LO_order2_15weights_ref_phase2_CMS               = Sample.fromDirectory("fwlite_ttZ_ll_LO_order2_15weights_ref",  texName = "ttZ",      directory = [os.path.join( gen_dir, "fwlite_ttZ_ll_LO_order2_15weights_ref" )]) 
+#fwlite_ttZ_ll_LO_order2_15weights_ref_phase2_CMS.reweight_pkl  = gridpack_dir + "18052018_ref/ttZ/order2/ttZ0j_rwgt_slc6_amd64_gcc630_CMSSW_9_3_0_tarball.pkl"
+#fwlite_ttZ_ll_LO_order2_15weights_ref_phase2_CMS.nEvents       = 990000
+#fwlite_ttZ_ll_LO_order2_15weights_ref_phase2_CMS.xsec          = 0.5205 * (0.0915 / 0.0565) #pb ttZ, Z->ll, ttZ gridpack * ttZ NLO Daniel / ttZ LO run.py UFO
+#fwlite_ttZ_ll_LO_order2_15weights_ref_phase2_CMS.xsec14        = 0.5205 * (0.0915 / 0.0565) * (0.7152 / 0.616) #pb ttZ, Z->ll, ttZ gridpack * ttZ NLO Daniel / ttZ LO run.py UFO * ttZ jets 14 TeV / ttZ jets 13 TeV
 
 # reference point 15/2
-fwlite_ttZ_ll_LO_order2_15weights_ref_ext_phase2_CMS               = Sample.fromDirectory("fwlite_ttZ_ll_LO_order2_15weights_ref_ext",  texName = "ttZ",      directory = [os.path.join( gen_dir, "fwlite_ttZ_ll_LO_order2_15weights_ref_ext" )]) 
+fwlite_ttZ_ll_LO_order2_15weights_ref_ext_phase2_CMS               = Sample.fromDirectory("fwlite_ttZ_ll_LO_order2_15weights_ref_ext",  texName = "ttZ",      directory = [os.path.join( gen_dir, "fwlite_ttZ_ll_LO_order2_15weights_ref_TEST" )]) 
 fwlite_ttZ_ll_LO_order2_15weights_ref_ext_phase2_CMS.reweight_pkl  = gridpack_dir + "18052018_ref/ttZ/order2/ttZ0j_rwgt_slc6_amd64_gcc630_CMSSW_9_3_0_tarball.pkl"
 fwlite_ttZ_ll_LO_order2_15weights_ref_ext_phase2_CMS.nEvents       = 990000
 fwlite_ttZ_ll_LO_order2_15weights_ref_ext_phase2_CMS.xsec          = 0.5205 * (0.0915 / 0.0565) #pb ttZ, Z->ll, ttZ gridpack * ttZ NLO Daniel / ttZ LO run.py UFO
