@@ -279,6 +279,16 @@ if not os.path.isfile('dat/' + filename) or args.overwrite:
         # non CMS NLL plot
         from TTXPheno.Analysis.ProfiledLoglikelihoodFit import ProfiledLoglikelihoodFit
 
+    def convDipolesAnomalousCoupling( c2V, c2A ):
+        ctZ  = c2V / 0.103
+        ctZI = c2A / 0.103
+        return round(ctZ,6), round(ctZI,6)
+
+    def convVectorAnomalousCoupling( c1V, c1A ):
+        cpQM = ( c1V - c1A - 0.849 ) / ( -0.073 )
+        cpt  = ( c1V + c1A + 0.357 ) / ( -0.073 )
+        return round(cpQM,6), round(cpt,6)
+
     def cuBWtoctWZ( cuB, cuW ):
         ''' transforms C_tZ and C_tW to C_uB and C_uW
             C_tZ = Re( -sW*C_uB + cW*C_uW )
@@ -295,7 +305,21 @@ if not os.path.isfile('dat/' + filename) or args.overwrite:
 
 
     def calculation( var ):
-        kwargs = { args.variable:var }
+
+        if args.variable == "c1V":
+            cpQM, cpt = convVectorAnomalousCoupling( var, 0 )
+            kwargs = { "cpQM":cpQM, "cpt":cpt }
+        elif args.variable == "c1A":
+            cpQM, cpt = convVectorAnomalousCoupling( 0, var )
+            kwargs = { "cpQM":cpQM, "cpt":cpt }
+        elif args.variable == "c2V":
+            ctZ, ctZI = convDipolesAnomalousCoupling( var, 0 )
+            kwargs = { "ctZ":ctZ }
+        elif args.variable == "c2A":
+            ctZ, ctZI = convDipolesAnomalousCoupling( 0, var )
+            kwargs = { "ctZI":ctZI }
+        else:
+            kwargs = { args.variable:var }
 
         nameList = args.sample.split('_')[1:3] + [args.variable] + args.binning + [ args.level, args.version, args.order, args.luminosity, "14TeV" if args.scale14TeV else "13TeV", args.selection, 'small' if args.small else 'full', 'statOnly' if args.statOnly else 'fullUnc' if not args.noExpUnc else 'noExpUnc', var ]
         cardname = '%s_nll_card'%'_'.join( map( str, nameList ) )
@@ -462,8 +486,13 @@ else:
 
 #Plot
 
+# Plot ranges
+ranges = {'cpt':[-1.1,1.1], 'cpQM':[-1.1,1.1], 'ctZ':[-0.6,0.6], 'ctZI':[-0.6,0.6], 'c1V':[-0.4,0.6], 'c1A':[-0.65,-0.55], 'c2V':[-0.06,0.06], 'c2A':[-0.06,0.06]}
+rangesMin = {'cpt':0, 'cpQM':0, 'ctZ':0, 'ctZI':0, 'c1V':0.246, 'c1A':-0.603, 'c2V':0, 'c2A':0}
+
 results = [ (x, 2*(res-SM[1])) for x, res in results]
 results.sort( key = lambda res: res[0] )
+
 
 def toGraph( name, title, data ):
     result  = ROOT.TGraph( len(data) )
@@ -478,18 +507,27 @@ def toGraph( name, title, data ):
     #res = ROOT.TGraphDelaunay(result)
     return result
 
-# Plot ranges
-ranges = {'cpt':[-1.1,1.1], 'cpQM':[-1.1,1.1], 'ctZ':[-0.6,0.6], 'ctZI':[-0.6,0.6]}
+polStringEFTAC2 = "[0]*x**2+[1]*x**3+[2]*x**4+[3]*x**5+[4]*x**6+[5]*x**7+[6]*x**8+[7]*x**9+[8]*x**10+[9]*x**11+[10]*x**12"
+polStringAC1V   = "[2]*(x-0.246)**2+[3]*(x-0.246)**3+[4]*(x-0.246)**4+[5]*(x-0.246)**5+[6]*(x-0.246)**6+[7]*(x-0.246)**7+[8]*(x-0.246)**8+[9]*(x-0.246)**9+[10]*(x-0.246)**10+[11]*(x-0.246)**11+[12]*(x-0.246)**12"
+polStringAC1A   = "[2]*(x+0.603)**2+[3]*(x+0.603)**3+[4]*(x+0.603)**4+[5]*(x+0.603)**5+[6]*(x+0.603)**6+[7]*(x+0.603)**7+[8]*(x+0.603)**8+[9]*(x+0.603)**9+[10]*(x+0.603)**10+[11]*(x+0.603)**11+[12]*(x+0.603)**12"
 
-polString = "[0]*x**2+[1]*x**3+[2]*x**4+[3]*x**5+[4]*x**6"
+if args.variable == "c1V":
+    polString = polStringAC1V
+elif args.variable == "c1A":
+    polString = polStringAC1A
+else:
+    polString = polStringEFTAC2
+
+
+
 # get TGraph from results data list
 xhist = toGraph( args.process, args.process, results )
 func  = ROOT.TF1("func",polString,ranges[args.variable][0], ranges[args.variable][1] ) 
 xhist.Fit(func,"NO")
-x68min = func.GetX( 0.989, ranges[args.variable][0], 0 )
-x68max = func.GetX( 0.989, 0, ranges[args.variable][1] )
-x95min = func.GetX( 3.84, ranges[args.variable][0], 0 )
-x95max = func.GetX( 3.84, 0, ranges[args.variable][1] )
+x68min = func.GetX( 0.989, ranges[args.variable][0], rangesMin[args.variable] )
+x68max = func.GetX( 0.989, rangesMin[args.variable], ranges[args.variable][1] )
+x95min = func.GetX( 3.84, ranges[args.variable][0], rangesMin[args.variable] )
+x95max = func.GetX( 3.84, rangesMin[args.variable], ranges[args.variable][1] )
 
 xhist.SetLineWidth(0)
 
@@ -572,7 +610,10 @@ leg.Draw()
 
 xTitle = args.variable.replace('c','C_{').replace('p','#phi').replace('M','') + '}' 
 if 'I' in xTitle: xTitle = xTitle.replace('I','') + '^{[Im]}'
-xhist.GetXaxis().SetTitle( xTitle + ' (#Lambda/TeV)^{2}' )
+if args.variable == "c1V" or args.variable == "c1A":
+    xhist.GetXaxis().SetTitle( xTitle )
+else:
+    xhist.GetXaxis().SetTitle( xTitle + ' (#Lambda/TeV)^{2}' )
 
 xhist.GetXaxis().SetTitleFont(42)
 xhist.GetYaxis().SetTitleFont(42)

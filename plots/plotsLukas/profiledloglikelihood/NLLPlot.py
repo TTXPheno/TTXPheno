@@ -512,8 +512,68 @@ def toGraph2D( name, title, data ):
     #res = ROOT.TGraphDelaunay(result)
     return result, debug
 
+def convDipolesAnomalousCoupling( c2V, c2A ):
+    ctZ  = c2V / 0.103
+    ctZI = c2A / 0.103
+    return round(ctZ,6), round(ctZI,6)
+
+def convVectorAnomalousCoupling( c1V, c1A ):
+    cpQM = ( c1V - c1A - 0.849 ) / ( -0.073 )
+    cpt  = ( c1V + c1A + 0.357 ) / ( -0.073 )
+    return round(cpQM,6), round(cpt,6)
+
+def convVectorCoupling( cpQM, cpt ):
+    c1V =  0.244 - 0.0365 * (cpQM + cpt)
+    c1A = -0.601 + 0.0365 * (cpQM - cpt)
+    return c1V, c1A
+
+def convDipoles( ctZ, ctZI ):
+    c2V = 0.103 * ctZ
+    c2A = 0.103 * ctZI
+    return c2V, c2A
+
+def convertToAnomalousCouplings( res ):
+    if "cpQM" in args.variables and "cpt" in args.variables:
+        conversion = convVectorCoupling
+        reversed = args.variables[0] == "cpt"
+
+    elif "ctZ"  in args.variables and "ctZI" in args.variables:
+        conversion = convDipoles
+        reversed = args.variables[0] == "ctZI"
+
+    else:
+        raise ValueError('Anomalous Coupling conversion not implemented for %s'% " and ".join(args.variables))
+
+    res_conv = []
+    for x, y, nll in res:
+        if reversed:
+            y_conv, x_conv = conversion( y, x )
+        else:
+            x_conv, y_conv = conversion( x, y )
+
+        res_conv.append( (x_conv, y_conv, nll) )
+
+    return res_conv
+
+
 #get TGraph2D from results list
 a, debug = toGraph2D( args.process, args.process, results )#res_dic)
+resultsAC = convertToAnomalousCouplings(results)
+allX = [x for x, y, nll in resultsAC ]
+allY = [y for x, y, nll in resultsAC ]
+resultsAC.append( ( min(allX),min(allY),999) )
+resultsAC.append( ( min(allX),max(allY),999) )
+resultsAC.append( ( max(allX),min(allY),999) )
+resultsAC.append( ( max(allX),max(allY),999) )
+if "cpQM" in args.variables and "cpt" in args.variables:
+    resultsAC.append( ( -0.47, -0.53, 32) )
+    resultsAC.append( ( -0.48, -0.55, 32) )
+    resultsAC.append( ( -0.48, -0.58, 32) )
+    resultsAC.append( (  0.61, -0.58, 32) )
+    resultsAC.append( (  0.61, -0.52, 32) )
+    resultsAC.append( (  0.58, -0.5, 32) )
+
+ac, debug = toGraph2D( args.process + "ac", args.process + "ac", resultsAC )#res_dic)
 nxbins   = max(1, min(500, int(binningX[0])*int(args.binMultiplier)))
 nybins   = max(1, min(500, int(binningY[0])*int(args.binMultiplier)))
 
@@ -523,8 +583,15 @@ a.SetNpx(nxbins)
 a.SetNpy(nybins)
 hist = a.GetHistogram().Clone()
 
+histac = ac.GetHistogram().Clone()
+ac.SetNpx(nxbins)
+ac.SetNpy(nybins)
+histac = ac.GetHistogram().Clone()
+
 #smoothing
-if args.smooth: hist.Smooth()
+if args.smooth:
+    hist.Smooth()
+    histac.Smooth()
 
 cans = ROOT.TCanvas("can_%s"%args.process,"",500,500)
 
@@ -606,6 +673,126 @@ hist.GetZaxis().SetTitleSize(0.042)
 hist.GetXaxis().SetLabelSize(0.04)
 hist.GetYaxis().SetLabelSize(0.04)
 hist.GetZaxis().SetLabelSize(0.04)
+
+latex1 = ROOT.TLatex()
+latex1.SetNDC()
+latex1.SetTextSize(0.04)
+latex1.SetTextFont(42)
+latex1.SetTextAlign(11)
+
+latex1.DrawLatex(0.03, 0.92, '#bf{CMS Phase-2} #it{Simulation Preliminary}'),
+#latex1.DrawLatex(0.15, 0.95, '#bf{CMS Phase-2} #it{Simulation Preliminary}'),
+latex1.DrawLatex(0.68, 0.92, '%i ab{}^{-1} (%s TeV)' % (int(args.luminosity/1000.), "14" if args.scale14TeV else "13"))
+
+latex2 = ROOT.TLatex()
+latex2.SetNDC()
+latex2.SetTextSize(0.04)
+latex2.SetTextFont(42)
+latex2.SetTextAlign(11)
+
+#latex2.DrawLatex(0.15, 0.9, 'with Stat. uncert. only' if args.statOnly else 'with YR18 syst. uncert.' if not args.noExpUnc else 'w/o Exp. uncert.'),
+if (args.noExpUnc or args.statOnly): latex2.DrawLatex(0.17, 0.82, 'Stat. uncert. only' if args.statOnly else 'w/o Exp. uncert.'),
+
+#latex1.DrawLatex(0.15, 0.92, ' '.join(args.process.split('_')[:2]) + ' (' + args.detector + ')')
+#latex1.DrawLatex(0.55, 0.92, '%3.1f fb{}^{-1} @ 13 TeV'%(float(args.luminosity) if args.scale is None else float(args.scale)) )
+
+plot_directory_ = os.path.join(\
+    plot_directory,
+    '%s_%s'%(args.level, args.version),
+    args.detector,
+    args.sample,
+    'backgrounds',
+    'nll_small' if args.small else 'nll',
+    args.selection)
+
+if not os.path.isdir( plot_directory_ ):
+    os.makedirs( plot_directory_ )
+
+for e in [".png",".pdf",".root"]:
+    cans.Print( plot_directory_ + '/' + '_'.join(args.variables + ['lumi'+str(args.luminosity) if args.scale is None else 'lumi'+str(args.scale), "14TeV" if args.scale14TeV else "13TeV", "CMScombine" if args.useCombine else "privateFit", "bestFit" if args.bestFit else "r1", 'statOnly' if args.statOnly else 'fullUnc' if not args.noExpUnc else 'noExpUnc']) + e)
+
+del cans
+del hist
+# plot anomalous couplings
+
+args.variables[0] = args.variables[0].replace('pQM','1V').replace('pt','1A').replace('tZ','2V').replace('2VI','2A')
+args.variables[1] = args.variables[1].replace('pQM','1V').replace('pt','1A').replace('tZ','2V').replace('2VI','2A')
+
+cans = ROOT.TCanvas("can_%s"%args.process,"",500,500)
+
+#calculate contour lines (1sigma, 2sigma) for 2D
+contours = {'ttZ_3l': [2.28, 5.99]}
+if args.contours:
+    histsForCont = histac.Clone()
+    c_contlist = ((ctypes.c_double)*(len(contours[args.process])))(*contours[args.process])
+    histsForCont.SetContour(len(c_contlist),c_contlist)
+    histsForCont.Draw("contzlist")
+    cans.Update()
+    conts = ROOT.gROOT.GetListOfSpecials().FindObject("contours")
+    #cont_m2 = conts.At(0).Clone()
+    #cont_m1 = conts.At(1).Clone()
+    cont_p1 = conts.At(0).Clone()
+    cont_p2 = conts.At(1).Clone()
+
+pads = ROOT.TPad("pad_%s"%args.process,"",0.,0.,1.,1.)
+pads.SetRightMargin(0.20)
+pads.SetLeftMargin(0.14)
+pads.SetTopMargin(0.11)
+pads.Draw()
+pads.cd()
+
+histac.Draw("colz")
+
+#draw contour lines
+if args.contours:
+    for conts in [cont_p2]:
+        for cont in conts:
+            cont.SetLineColor(ROOT.kOrange+7)
+            cont.SetLineWidth(3)
+#            cont.SetLineStyle(7)
+            cont.Draw("same")
+    for conts in [cont_p1]:
+        for cont in conts:
+            cont.SetLineColor(ROOT.kSpring-1)
+            cont.SetLineWidth(3)
+#            cont.SetLineStyle(7)
+            cont.Draw("same")
+
+
+histac.GetZaxis().SetTitle("-2 #Delta ln L")
+
+if not None in args.zRange:
+    histac.GetZaxis().SetRangeUser( args.zRange[0], args.zRange[1] )
+#    if "c1V" in args.variables and "c1A" in args.variables:
+#        histac.GetYaxis().SetRangeUser( -0.8 , -0.4 )
+#    histac.GetXaxis().SetRangeUser( -1 , 1 )
+#    histac.GetYaxis().SetRangeUser( -1 , 1 )
+#    histac.GetXaxis().SetRangeUser( -8 , 12 )
+#    histac.GetYaxis().SetRangeUser( -8 , 12 )
+
+
+xTitle = args.variables[0].replace('c','C_{') + '}' 
+yTitle = args.variables[1].replace('c','C_{') + '}' 
+
+histac.GetXaxis().SetTitle( xTitle )
+histac.GetYaxis().SetTitle( yTitle )
+
+histac.GetXaxis().SetTitleFont(42)
+histac.GetYaxis().SetTitleFont(42)
+histac.GetZaxis().SetTitleFont(42)
+histac.GetXaxis().SetLabelFont(42)
+histac.GetYaxis().SetLabelFont(42)
+histac.GetZaxis().SetLabelFont(42)
+
+histac.GetXaxis().SetTitleOffset(1.15)
+histac.GetYaxis().SetTitleOffset(1.25)
+
+histac.GetXaxis().SetTitleSize(0.045)
+histac.GetYaxis().SetTitleSize(0.045)
+histac.GetZaxis().SetTitleSize(0.042)
+histac.GetXaxis().SetLabelSize(0.04)
+histac.GetYaxis().SetLabelSize(0.04)
+histac.GetZaxis().SetLabelSize(0.04)
 
 latex1 = ROOT.TLatex()
 latex1.SetNDC()
