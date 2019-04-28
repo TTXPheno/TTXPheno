@@ -17,7 +17,7 @@ from RootTools.core.standard             import *
 #TTXPheno
 from TTXPheno.Tools.user                   import skim_output_directory
 from TTXPheno.Tools.GenSearch              import GenSearch
-from TTXPheno.Tools.helpers                import deltaPhi, deltaR, deltaR2, cosThetaStar, closestOSDLMassToMZ
+from TTXPheno.Tools.helpers                import deltaPhi, deltaR, deltaR2, cosThetaStar, closestOSDLMassToMZ, checkRootFile
 from TTXPheno.Tools.HyperPoly              import HyperPoly
 from TTXPheno.Tools.WeightInfo             import WeightInfo
 from TTXPheno.Tools.DelphesProducer        import DelphesProducer
@@ -818,7 +818,7 @@ output_filename =  os.path.join(output_directory, sample.name + '.root')
 _logger.   add_fileHandler( output_filename.replace('.root', '.log'), args.logLevel )
 _logger_rt.add_fileHandler( output_filename.replace('.root', '_rt.log'), args.logLevel )
 
-if os.path.exists( output_filename ) and args.overwrite =='none' :
+if os.path.exists( output_filename ) and checkRootFile( output_filename, checkForObjects=["Events"]) and args.overwrite =='none' :
     logger.info( "File %s found. Quit.", output_filename )
     sys.exit(0)
 
