@@ -38,8 +38,9 @@
 #python genPostProcessing.py --targetDir RunII_v01 --logLevel DEBUG --interpolationOrder 2  --delphes --delphesEra RunII --sample fwlite_tWZ_LO_order2_15weights #SPLIT200
 #python genPostProcessing.py --targetDir RunII_v01 --logLevel DEBUG --interpolationOrder 2  --delphes --delphesEra RunII --sample fwlite_Zgamma_LO_order2_15weights #SPLIT200
 #python genPostProcessing.py --targetDir RunII_v01 --logLevel DEBUG --interpolationOrder 2  --delphes --delphesEra RunII --sample fwlite_ttZ_ll_LO_order3_8weights #SPLIT200
-python genPostProcessing.py --targetDir RunII_v01 --logLevel DEBUG --addReweights --interpolationOrder 2  --delphes --delphesEra RunII --sample fwlite_ttZ_ll_LO_order2_15weights_ref_ext #SPLIT1999
-python genPostProcessing.py --targetDir RunII_v01 --logLevel DEBUG --addReweights --interpolationOrder 2  --delphes --delphesEra RunII --sample fwlite_ttZ_ll_LO_order2_15weights_ref #SPLIT200
+python genPostProcessing.py --targetDir RunII_v01 --logLevel DEBUG --interpolationOrder 2  --delphes --delphesEra RunII --sample fwlite_WJetsToLNu_order2_15weights #SPLIT200
+#python genPostProcessing.py --targetDir RunII_v01 --logLevel DEBUG --addReweights --interpolationOrder 2  --delphes --delphesEra RunII --sample fwlite_ttZ_ll_LO_order2_15weights_ref_ext #SPLIT1999
+#python genPostProcessing.py --targetDir RunII_v01 --logLevel DEBUG --addReweights --interpolationOrder 2  --delphes --delphesEra RunII --sample fwlite_ttZ_ll_LO_order2_15weights_ref #SPLIT200
 #python genPostProcessing.py --targetDir RunII_v01 --logLevel DEBUG --interpolationOrder 2  --delphes --delphesEra RunII --sample fwlite_ttW_LO_order3_8weights #SPLIT200
 #python genPostProcessing.py --targetDir RunII_v01 --logLevel DEBUG --interpolationOrder 2  --delphes --delphesEra RunII --sample fwlite_ttgamma_bg_LO_order2_15weights #SPLIT200
 

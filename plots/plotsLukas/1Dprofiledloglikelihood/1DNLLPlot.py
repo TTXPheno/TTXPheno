@@ -332,7 +332,6 @@ if not os.path.isfile('dat/' + filename) or args.overwrite:
             c.releaseLocation = combineReleaseLocation
 
         if not args.fitOnly:
-#            print 'run cardfile'
 
             # uncertainties
             c.reset()
@@ -488,6 +487,41 @@ else:
         else: results.append( tuple( vals ) )
 
 
+def convVectorCoupling( cpQM, cpt ):
+    c1V =  0.244 - 0.0365 * (cpQM + cpt)
+    c1A = -0.601 + 0.0365 * (cpQM - cpt)
+    return round(c1V,6), round(c1A,6)
+
+def convDipoles( ctZ, ctZI ):
+    c2V = 0.103 * ctZ
+    c2A = 0.103 * ctZI
+    return round(c2V,6), round(c2A,6)
+
+def convertToAnomalousCouplings( res ):
+    if "cpQM" in args.variables and "cpt" in args.variables:
+        conversion = convVectorCoupling
+        reversed = args.variables[0] == "cpt"
+        args.variables += ["c1V","c1A"]
+
+    elif "ctZ"  in args.variables and "ctZI" in args.variables:
+        conversion = convDipoles
+        reversed = args.variables[0] == "ctZI"
+        args.variables += ["c2V","c2A"]
+
+    else:
+        raise ValueError('Anomalous Coupling conversion not implemented for %s'% " and ".join(args.variables))
+
+    res_conv = []
+    for x, y, nll in res:
+        if reversed:
+            y_conv, x_conv = conversion( y, x )
+        else:
+            x_conv, y_conv = conversion( x, y )
+
+        res_conv.append( (x_conv, y_conv, nll) )
+
+    return res_conv
+
 #Plot
 
 #scale to SM
@@ -496,6 +530,15 @@ nll_SM = SM[2]
 
 results = [ (x, y, 2*(result - nll_SM)) for x, y, result in results ]
 
+resultsAC = convertToAnomalousCouplings(results)
+#allX = list(set([x for x, y, nll in resultsAC ]))
+#allY = list(set([y for x, y, nll in resultsAC ]))
+#resultsAC.append( ( min(allX),min(allY),999) )
+#resultsAC.append( ( min(allX),max(allY),999) )
+#resultsAC.append( ( max(allX),min(allY),999) )
+#resultsAC.append( ( max(allX),max(allY),999) )
+
+# get profiled results
 results.sort( key = lambda res: (res[0], res[2]) )
 xResults = []
 for key,group in itertools.groupby( results, operator.itemgetter(0) ):
@@ -506,6 +549,20 @@ yResults = []
 for key,group in itertools.groupby( results, operator.itemgetter(1) ):
     x, y, res = list(group)[0]
     yResults.append((y, res))
+
+# get profiled anomalous couplings results
+resultsAC.sort( key = lambda res: (res[0], res[2]) )
+xResultsAC = []
+for key,group in itertools.groupby( resultsAC, operator.itemgetter(0) ):
+    x, y, res = list(group)[0]
+    if res > 100: continue
+    xResultsAC.append((x, res))
+resultsAC.sort( key = lambda res: (res[1], res[2]) )
+yResultsAC = []
+for key,group in itertools.groupby( resultsAC, operator.itemgetter(1) ):
+    x, y, res = list(group)[0]
+    if res > 100: continue
+    yResultsAC.append((y, res))
 
 def toGraph( name, title, data ):
     result  = ROOT.TGraph( len(data) )
@@ -521,21 +578,31 @@ def toGraph( name, title, data ):
     return result
 
 # Plot ranges
-ranges = {'cpt':[-3.5,7.5], 'cpQM':[-3.5,7.5], 'ctZ':[-0.6,0.6], 'ctZI':[-0.6,0.6]}
+ranges    = {'cpt':[-3.5,7.5], 'cpQM':[-3.5,7.5], 'ctZ':[-0.6,0.6], 'ctZI':[-0.6,0.6], 'c1V':[-0.35,0.55], 'c1A':[-0.65,-0.55], 'c2V':[-0.065,0.065], 'c2A':[-0.065,0.065]}
+rangesMin = {'cpt':0, 'cpQM':0, 'ctZ':0, 'ctZI':0, 'c1V':0.244, 'c1A':-0.601, 'c2V':0, 'c2A':0}
 
+polStringEFTAC2 = "[0]*x**2+[1]*x**3+[2]*x**4+[3]*x**5+[4]*x**6+[5]*x**7+[6]*x**8+[7]*x**9+[8]*x**10+[9]*x**11+[10]*x**12"
+polStringAC1V   = "[2]*(x-0.244)**2+[3]*(x-0.244)**3+[4]*(x-0.244)**4+[5]*(x-0.244)**5+[6]*(x-0.244)**6+[7]*(x-0.244)**7+[8]*(x-0.244)**8+[9]*(x-0.244)**9+[10]*(x-0.244)**10+[11]*(x-0.244)**11+[12]*(x-0.244)**12"
+polStringAC1A   = "[2]*(x+0.601)**2+[3]*(x+0.601)**3+[4]*(x+0.601)**4+[5]*(x+0.601)**5+[6]*(x+0.601)**6+[7]*(x+0.601)**7+[8]*(x+0.601)**8+[9]*(x+0.601)**9+[10]*(x+0.601)**10+[11]*(x+0.601)**11+[12]*(x+0.601)**12"
 
-polString = "[0]*x**2+[1]*x**3+[2]*x**4+[3]*x**5+[4]*x**6+[5]*x**7+[6]*x**8+[7]*x**9+[8]*x**10+[9]*x**11+[10]*x**12"
+for i, dat in enumerate([xResults, yResults, xResultsAC, yResultsAC]):
 
-for i, dat in enumerate([xResults, yResults]):
+    if args.variables[i] == "c1V":
+        polString = polStringAC1V
+    elif args.variables[i] == "c1A":
+        polString = polStringAC1A
+    else:
+        polString = polStringEFTAC2
 
     # get TGraph from results data list
-    xhist = toGraph( args.process, args.process, dat )
-    func  = ROOT.TF1("func",polString,ranges[args.variables[i]][0], ranges[args.variables[i]][1] )
-    xhist.Fit(func,"NO")
-    x68min = func.GetX( 0.989, ranges[args.variables[i]][0], 0 )
-    x68max = func.GetX( 0.989, 0, ranges[args.variables[i]][1] )
-    x95min = func.GetX( 3.84, ranges[args.variables[i]][0], 0 )
-    x95max = func.GetX( 3.84, 0, ranges[args.variables[i]][1] )
+    xhist = toGraph( args.process + str(i), args.process + str(i), dat )
+
+    func  = ROOT.TF1("func%i"%i,polString,ranges[args.variables[i]][0], ranges[args.variables[i]][1] )
+    xhist.Fit(func,"NOQ")
+    x68min = func.GetX( 0.989, ranges[args.variables[i]][0], rangesMin[args.variables[i]] )
+    x68max = func.GetX( 0.989, rangesMin[args.variables[i]], ranges[args.variables[i]][1] )
+    x95min = func.GetX( 3.84, ranges[args.variables[i]][0], rangesMin[args.variables[i]] )
+    x95max = func.GetX( 3.84, rangesMin[args.variables[i]], ranges[args.variables[i]][1] )
 
     xhist.SetLineWidth(0)
 
@@ -553,15 +620,15 @@ for i, dat in enumerate([xResults, yResults]):
     ROOT.gStyle.SetPadTopMargin(0.11)
 
     # Plot
-    cans = ROOT.TCanvas("cans","cans",500,500)
+    cans = ROOT.TCanvas("cans%i"%i,"cans%i"%i,500,500)
 
     if not None in args.yRange:
         xhist.GetYaxis().SetRangeUser( args.yRange[0], args.yRange[1] )
         xhist.GetXaxis().SetRangeUser( ranges[args.variables[i]][0], ranges[args.variables[i]][1] )
 
 
-    func95 = ROOT.TF1("func95",polString, x95min,x95max )
-    xhist.Fit(func95,"NO")
+    func95 = ROOT.TF1("func95%i"%i,polString, x95min,x95max )
+    xhist.Fit(func95,"NOQ")
     func95.SetFillColor(ROOT.kOrange+7)
     func95.SetFillStyle(1001)
     func95.SetLineWidth(0)
@@ -572,8 +639,8 @@ for i, dat in enumerate([xResults, yResults]):
     fillarray = [(x68min,0)] + fillarray + [(x68max,0)] #Somehow ROOT needs this
     # create filled rectangular
 
-    func68 = ROOT.TF1("func68",polString, x68min,x68max )
-    xhist.Fit(func68,"NO")
+    func68 = ROOT.TF1("func68%i"%i,polString, x68min,x68max )
+    xhist.Fit(func68,"NOQ")
     func68.SetFillColor(ROOT.kSpring-1)
     func68.SetFillStyle(1001)
     func68.SetLineWidth(0)
@@ -623,7 +690,10 @@ for i, dat in enumerate([xResults, yResults]):
     
     xTitle = args.variables[i].replace('c','C_{').replace('p','#phi').replace('M','') + '}' 
     if 'I' in xTitle: xTitle = xTitle.replace('I','') + '^{[Im]}'
-    xhist.GetXaxis().SetTitle( xTitle + ' (#Lambda/TeV)^{2}' )
+    if i < 2:
+        xhist.GetXaxis().SetTitle( xTitle + ' (#Lambda/TeV)^{2}' )
+    else:
+        xhist.GetXaxis().SetTitle( xTitle )
     
     xhist.GetXaxis().SetTitleFont(42)
     xhist.GetYaxis().SetTitleFont(42)
@@ -669,3 +739,10 @@ for i, dat in enumerate([xResults, yResults]):
     
     for e in [".png",".pdf",".root"]:
         cans.Print( plot_directory_ + '/' + '_'.join([args.variables[i],'lumi'+str(args.luminosity), "14TeV" if args.scale14TeV else "13TeV", "CMScombine" if args.useCombine else "privateFit", "bestFit" if args.bestFit else "r1", 'statOnly' if args.statOnly else 'fullUnc' if not args.noExpUnc else 'noExpUnc']) + e)
+
+    del cans
+    del func
+    del func95
+    del func68
+    del xhist
+
