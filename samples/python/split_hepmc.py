@@ -121,4 +121,8 @@ if __name__ == '__main__':
 #            for filename in subsample.files:
 #                split_file( filename, args.maxEvents )
 
-    process_zip_directory( "/afs/hephy.at/data/cms01/TTXPheno/HEPMC/12_05/DATA_TTBARZ/full_range/C6/without_massterm/HEPMC", args.maxEvents)
+    #process_zip_directory( "/afs/hephy.at/data/cms01/TTXPheno/HEPMC/12_05/DATA_TTBARZ/full_range/C1/without_massterm/HEPMC", args.maxEvents)
+    #process_zip_directory( "/afs/hephy.at/data/cms01/TTXPheno/HEPMC/12_05/DATA_TTBARZ/full_range/C2/without_massterm/HEPMC", args.maxEvents)
+    #process_zip_directory( "/afs/hephy.at/data/cms01/TTXPheno/HEPMC/12_05/DATA_TTBARZ/full_range/C34/without_massterm/HEPMC", args.maxEvents)
+    process_zip_directory( "/afs/hephy.at/data/cms01/TTXPheno/HEPMC/12_05/DATA_TTBARZ/full_range/C6/with_massterm/HEPMC", args.maxEvents)
+    #process_zip_directory( "/afs/hephy.at/data/cms01/TTXPheno/HEPMC/12_05/DATA_TTBARZ/full_range/C6/without_massterm/HEPMC", args.maxEvents)

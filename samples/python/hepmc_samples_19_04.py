@@ -108,3 +108,9 @@ ttbarZ_fr_C6_woMT = HEPMCData(  "ttbarZ_fr_C6_woMT",
                                 isSplit         = True, 
                                 root_directory  = root_directory, 
                              )
+ttbarZ_fr_C6_wMT = HEPMCData(  "ttbarZ_fr_C6_wMT", 
+                                hepmc_directory = hepmc_directory, 
+                                sub_directory   = "DATA_TTBARZ/full_range/C6/with_massterm/HEPMC", 
+                                isSplit         = True, 
+                                root_directory  = root_directory, 
+                             )
