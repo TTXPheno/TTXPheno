@@ -24,13 +24,11 @@ if __name__ == "__main__":
 
 class HEPMCData(object):
 
-    pdfs      = ["1d0", "10d0", "100d0", "0d1", "0d01"]
     processes = ["GH", "HG", "HH"]
 
-    def __init__ ( self, name, hepmc_directory, sub_directory, root_directory = None, isSplit = False):
-
+    def __init__ ( self, name, hepmc_directory, sub_directory, pdfs, root_directory = None, isSplit = False):
         self.name         = name
-
+        self.pdfs         = pdfs
         # a .hepmc single file or, if I split it up, a directory of the same name
         # Add PP:
         self.samples_dict = { 'PP':\
@@ -39,7 +37,7 @@ class HEPMCData(object):
         if root_directory is not None:
             self.root_samples_dict = {'PP': Sample.fromDirectory( name+"_PP", os.path.join( root_directory, name+"_PP" ) )}
         # Add the variations 
-        for pdf in HEPMCData.pdfs:
+        for pdf in self.pdfs:
             for process in HEPMCData.processes:
                 self.samples_dict[pdf+'_'+process] = HEPMCSample.fromDirectory( name+'_'+pdf+'_'+process, os.path.join( hepmc_directory, sub_directory, '%s_%s'%(pdf, process)) )
                 # Add the root files for the variations
@@ -96,21 +94,66 @@ class HEPMCData(object):
     def root_files( self ):
         return sum( [s.files for s in self.root_samples], [] ) 
                
-hepmc_directory = "/afs/hephy.at/data/cms01/TTXPheno/HEPMC/12_05/"
+hepmc_directory = "/afs/hephy.at/data/cms06/TTXPheno/HEPMC/12_05/"
 root_directory  = "/afs/hephy.at/data/rschoefbeck01/TTXPheno/skims/gen/RunII_v01/19_04/"
 #bbar   = HEPMCData( "bbbar", os.path.join( hepmc_directory, "C89_BBBAR" ) )
 #ttbar  = HEPMCData( "ttbar", os.path.join( hepmc_directory, "C89_TTBAR" ), isSplit = True, root_directory = root_directory)
 
 
-ttbarZ_fr_C6_woMT = HEPMCData(  "ttbarZ_fr_C6_woMT", 
+ttbarZ_fr_C6_woMT = HEPMCData(  "ttbarZ_fr_C6_woMT",
                                 hepmc_directory = hepmc_directory, 
                                 sub_directory   = "DATA_TTBARZ/full_range/C6/without_massterm/HEPMC", 
+                                pdfs            = ["1d0", "10d0", "100d0", "0d1", "0d01"], 
                                 isSplit         = True, 
                                 root_directory  = root_directory, 
                              )
 ttbarZ_fr_C6_wMT = HEPMCData(  "ttbarZ_fr_C6_wMT", 
                                 hepmc_directory = hepmc_directory, 
                                 sub_directory   = "DATA_TTBARZ/full_range/C6/with_massterm/HEPMC", 
+                                pdfs            = ["1d0", "10d0", "100d0", "0d1", "0d01"], 
+                                isSplit         = True, 
+                                root_directory  = root_directory, 
+                             )
+ttbarZ_lr_C6_woMT = HEPMCData(  "ttbarZ_lr_C6_woMT", 
+                                hepmc_directory = hepmc_directory, 
+                                sub_directory   = "DATA_TTBARZ/limited_range/C6/without_massterm/HEPMC", 
+                                pdfs            = ["10d0", "1d0", "3d25", "5d5", "7d75"], 
+                                isSplit         = True, 
+                                root_directory  = root_directory, 
+                             )
+ttbarZ_lr_C6_wMT = HEPMCData(  "ttbarZ_lr_C6_wMT", 
+                                hepmc_directory = hepmc_directory, 
+                                sub_directory   = "DATA_TTBARZ/limited_range/C6/with_massterm/HEPMC", 
+                                pdfs            = ["10d0", "1d0", "3d25", "5d5", "7d75"], 
+                                isSplit         = True, 
+                                root_directory  = root_directory, 
+                             )
+
+ttbar_fr_C6_woMT = HEPMCData(  "ttbar_fr_C6_woMT", 
+                                hepmc_directory = hepmc_directory, 
+                                sub_directory   = "DATA_TTBAR/full_range/C6/without_massterm/HEPMC", 
+                                pdfs            = ["1d0", "10d0", "100d0", "0d1", "0d01"], 
+                                isSplit         = True, 
+                                root_directory  = root_directory, 
+                             )
+ttbar_fr_C6_wMT = HEPMCData(  "ttbar_fr_C6_wMT", 
+                                hepmc_directory = hepmc_directory, 
+                                sub_directory   = "DATA_TTBAR/full_range/C6/with_massterm/HEPMC", 
+                                pdfs            = ["1d0", "10d0", "100d0", "0d1", "0d01"], 
+                                isSplit         = True, 
+                                root_directory  = root_directory, 
+                             )
+ttbar_lr_C6_woMT = HEPMCData(  "ttbar_lr_C6_woMT", 
+                                hepmc_directory = hepmc_directory, 
+                                sub_directory   = "DATA_TTBAR/limited_range/C6/without_massterm/HEPMC", 
+                                pdfs            = ["10d0", "1d0", "3d25", "5d5", "7d75"], 
+                                isSplit         = True, 
+                                root_directory  = root_directory, 
+                             )
+ttbar_lr_C6_wMT = HEPMCData(  "ttbar_lr_C6_wMT", 
+                                hepmc_directory = hepmc_directory, 
+                                sub_directory   = "DATA_TTBAR/limited_range/C6/with_massterm/HEPMC", 
+                                pdfs            = ["10d0", "1d0", "3d25", "5d5", "7d75"], 
                                 isSplit         = True, 
                                 root_directory  = root_directory, 
                              )

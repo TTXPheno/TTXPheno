@@ -71,7 +71,7 @@ def count_events( filename ):
 
     return count
 
-def process_zip_directory( directory, maxEvents):
+def process_zip_directory( directory, maxEvents, overwrite = False):
     # Loop over all zip files, unzip, split
     for zfilename in os.listdir( directory ):
         if zfilename.endswith( '.zip' ):
@@ -80,7 +80,7 @@ def process_zip_directory( directory, maxEvents):
             output_tmp_name = zfile.namelist()[0]
             output_name     = zfilename.replace('.zip', '.hepmc')
             output_dir      = zfilename.replace('.zip', '')
-            if os.path.exists( os.path.join(directory, output_dir) ):
+            if not overwrite and os.path.exists( os.path.join(directory, output_dir) ):
                 logger.info( "Found %s, do nothing", os.path.join(directory, output_dir) )
             else:
                 logger.info( "Extracting file %s", zfilename)
@@ -95,7 +95,7 @@ def process_zip_directory( directory, maxEvents):
             #count events
             pkl_filename = os.path.join(directory, output_dir+'.pkl')
             nEvents = None
-            if not os.path.exists( pkl_filename ):
+            if overwrite or not os.path.exists( pkl_filename ):
                 logger.info( "Counting events in %s", os.path.join(directory, output_dir) )
                 nEvents = sum( [count_events(os.path.join( directory, output_dir, filename )) for filename in os.listdir( os.path.join(directory, output_dir) )], 0)
                 pickle.dump( nEvents, file( pkl_filename, 'w' ) ) 
@@ -121,8 +121,13 @@ if __name__ == '__main__':
 #            for filename in subsample.files:
 #                split_file( filename, args.maxEvents )
 
-    #process_zip_directory( "/afs/hephy.at/data/cms01/TTXPheno/HEPMC/12_05/DATA_TTBARZ/full_range/C1/without_massterm/HEPMC", args.maxEvents)
-    #process_zip_directory( "/afs/hephy.at/data/cms01/TTXPheno/HEPMC/12_05/DATA_TTBARZ/full_range/C2/without_massterm/HEPMC", args.maxEvents)
-    #process_zip_directory( "/afs/hephy.at/data/cms01/TTXPheno/HEPMC/12_05/DATA_TTBARZ/full_range/C34/without_massterm/HEPMC", args.maxEvents)
-    process_zip_directory( "/afs/hephy.at/data/cms01/TTXPheno/HEPMC/12_05/DATA_TTBARZ/full_range/C6/with_massterm/HEPMC", args.maxEvents)
-    #process_zip_directory( "/afs/hephy.at/data/cms01/TTXPheno/HEPMC/12_05/DATA_TTBARZ/full_range/C6/without_massterm/HEPMC", args.maxEvents)
+
+    overwrite = False
+    #process_zip_directory( "/afs/hephy.at/data/cms06/TTXPheno/HEPMC/12_05/DATA_TTBARZ/full_range/C6/with_massterm/HEPMC", args.maxEvents)
+    #process_zip_directory( "/afs/hephy.at/data/cms06/TTXPheno/HEPMC/12_05/DATA_TTBARZ/full_range/C6/without_massterm/HEPMC", args.maxEvents)
+    process_zip_directory( "/afs/hephy.at/data/cms06/TTXPheno/HEPMC/12_05/DATA_TTBARZ/limited_range/C6/with_massterm/HEPMC", args.maxEvents, overwrite=overwrite)
+    process_zip_directory( "/afs/hephy.at/data/cms06/TTXPheno/HEPMC/12_05/DATA_TTBARZ/limited_range/C6/without_massterm/HEPMC", args.maxEvents, overwrite=overwrite)
+    process_zip_directory( "/afs/hephy.at/data/cms06/TTXPheno/HEPMC/12_05/DATA_TTBAR/full_range/C6/with_massterm/HEPMC", args.maxEvents, overwrite=overwrite)
+    process_zip_directory( "/afs/hephy.at/data/cms06/TTXPheno/HEPMC/12_05/DATA_TTBAR/full_range/C6/without_massterm/HEPMC", args.maxEvents, overwrite=overwrite)
+    process_zip_directory( "/afs/hephy.at/data/cms06/TTXPheno/HEPMC/12_05/DATA_TTBAR/limited_range/C6/with_massterm/HEPMC", args.maxEvents, overwrite=overwrite)
+    process_zip_directory( "/afs/hephy.at/data/cms06/TTXPheno/HEPMC/12_05/DATA_TTBAR/limited_range/C6/without_massterm/HEPMC", args.maxEvents, overwrite=overwrite)
