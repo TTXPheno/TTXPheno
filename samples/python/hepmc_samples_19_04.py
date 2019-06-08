@@ -157,3 +157,12 @@ ttbar_lr_C6_wMT = HEPMCData(  "ttbar_lr_C6_wMT",
                                 isSplit         = True, 
                                 root_directory  = root_directory, 
                              )
+
+root_directory  = "/afs/hephy.at/data/rschoefbeck01/TTXPheno/skims/gen/RunII_v02/19_04/"
+ttbar_fr_C6_wMT_v02 = HEPMCData(  "ttbar_fr_C6_wMT", 
+                                hepmc_directory = hepmc_directory, 
+                                sub_directory   = "DATA_TTBAR/full_range/C6/with_massterm/HEPMC", 
+                                pdfs            = ["1d0", "10d0", "100d0", "0d1", "0d01"], 
+                                isSplit         = True, 
+                                root_directory  = root_directory, 
+                             )

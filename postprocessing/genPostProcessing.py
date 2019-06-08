@@ -268,7 +268,7 @@ logger.info( "Running over files: %s", ", ".join(sample.files ) )
 if args.delphes:
     if args.delphesEra == 'RunII':
         from TTXPheno.Tools.DelphesReader          import DelphesReader
-        delphesCard = 'delphes_card_CMS_PileUp'
+        delphesCard = 'delphes_card_CMS'
     elif args.delphesEra == 'PhaseII':
         from TTXPheno.Tools.DelphesReaderCMSHLLHC  import DelphesReader
         delphesCard = 'CMS_PhaseII/CMS_PhaseII_200PU_v03'
