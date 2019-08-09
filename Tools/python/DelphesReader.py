@@ -55,6 +55,11 @@ class DelphesReader( DelphesReaderBase ): # version RootTools reader
                 ('NCharged', 'nCharged'), ('NNeutrals', 'nNeutrals'), 
             ])
 
+    def genJets( self ):
+        return self.read_collection( 'GenJet', 
+            [   ('PT', 'pt'), ( 'Eta', 'eta'), ('Phi', 'phi'),
+            ])
+
     def photons( self ):
         return self.read_collection( 'Photon', 
             [   ('PT', 'pt'), ( 'Eta', 'eta'), ('Phi', 'phi'),

@@ -204,7 +204,8 @@ if args.delphes or args.HEPMC:
     recoLep_vars       = "pt/F,eta/F,phi/F,pdgId/I,isolationVar/F,isolationVarRhoCorr/F,sumPtCharged/F,sumPtNeutral/F,sumPtChargedPU/F,sumPt/F,ehadOverEem/F"
     variables         += ["recoLep[%s]"%recoLep_vars]
     recoLep_varnames  = varnames( recoLep_vars )
-        
+    # generated jets 
+    variables += ["ndelphesGenJet/I", "delphesGenJet[pt/F,eta/F,phi/F]"]
     # reconstructed jets
     recoJet_vars    = 'pt/F,eta/F,phi/F,bTag/F,bTagPhys/I,nCharged/I,nNeutrals/I,pt_JEC_up/F,pt_JEC_up/F' 
 
@@ -665,6 +666,9 @@ def filler( event ):
     # Reco quantities
     if args.delphes or args.HEPMC:
         #delphesReader.event.GetEntry(fwliteReader.position-1 ) # do this differently now ...  
+
+        delphes_genJets = delphesReader.genJets()
+        fill_vector_collection( event, "delphesGenJet", ['pt','eta', 'phi'], delphes_genJets)
 
         # add JEC info
         allRecoJets = delphesReader.jets()

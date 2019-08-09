@@ -69,7 +69,7 @@ else:
     from TTXPheno.Tools.objectSelection import isGoodGenLepton as isGoodLepton
 
 preTag = 'reco' if args.level == 'reco' else 'gen'
-tag = 'reco' if args.level == 'reco' else 'genLep'
+tag    = 'reco' if args.level == 'reco' else 'genLep'
 
 # Logger
 import TTXPheno.Tools.logger as logger
@@ -471,13 +471,9 @@ def drawPlots(plots):
           hi.legendText = allParams[i_h][j_hi]['legendText']
           hi.GetXaxis().SetTickLength(0.04)
           hi.GetYaxis().SetTickLength(0.04)
-#          hi.GetXaxis().SetLabelOffset(1.4)
-#          hi.GetYaxis().SetLabelOffset(1.2)
-#          hi.GetXaxis().SetTitleOffset(1.4)
           hi.GetYaxis().SetTitleOffset(1.)
           hi.GetXaxis().SetTitleSize(0.035)
           hi.GetYaxis().SetTitleSize(0.035)
-
 
       if not max( max(li.GetMaximum() for li in l) for l in plot.histos): continue # Empty plot
 

@@ -204,6 +204,18 @@ fwlite_ttgamma_bg_LO_order2_15weights.reweight_pkl     = "/afs/hephy.at/data/lle
 fwlite_ttgamma_bg_LO_order2_15weights.nEvents          = 1000000 
 fwlite_ttgamma_bg_LO_order2_15weights.xsec             = 2.179 * 3.697 / 2.302 #pb ttgamma gridpack * ttgamma NLO Daniel / ttgamma LO run.py UFO
 
+# new gridpack setup, ttgg and twg: /afs/hephy.at/data/rschoefbeck01/gridpacks
+#  --reference ctZ 4 ctZI 4 --couplings 4 cpt 1 cpQM 1 ctZ 1 ctZI 1
+# FIXME: very high xsec from MG. Fishy.
+#fwlite_ttGG_LO_order4_4weights_ref     =   FWLiteSample.fromDAS("fwlite_ttGG_LO_order4_4weights_ref", "/ttGG_rwgt_2/schoef-ttGG_rwgt_2-e8dc89f0fc55e4e66778ef070ff28ceb/USER", "phys03", dbFile = dbFile, overwrite=overwrite, prefix='root://hephyse.oeaw.ac.at/')
+#fwlite_ttGG_LO_order4_4weights_ref.reweight_pkl = "/afs/hephy.at/data/rschoefbeck01/gridpacks/cpt_cpQM_ctZ_ctZI_order4_ref_rwgt_reweight_card.pkl" 
+#fwlite_ttGG_LO_order4_4weights_ref.nEvents = 1000000
+#
+# FIXME: very high xsec from MG. Fishy.
+#fwlite_tWGamma_LO_order4_4weights_ref  =   FWLiteSample.fromDAS("fwlite_tWGamma_LO_order4_4weights_ref", "/tWGamma_2/schoef-tWGamma_2-6b266c1767e4e88fb40fcc8c6f73c317/USER", "phys03", dbFile = dbFile, overwrite=overwrite, prefix='root://hephyse.oeaw.ac.at/')
+#fwlite_tWGamma_LO_order4_4weights_ref.reweight_pkl = "/afs/hephy.at/data/rschoefbeck01/gridpacks/cpt_cpQM_ctZ_ctZI_order4_ref_rwgt_reweight_card.pkl" 
+#fwlite_tWGamma_LO_order4_4weights_ref.nEvents = 1000000
+
 # background samples 0/2 (WZ) or 15/2 (ttbar with reference point)
 #leptonic decays W > lnu, Z > ll, t > Wb
 fwlite_tt_dilep_LO_order2_15weights_ref              = FWLiteSample.fromDAS("fwlite_tt_dilep_LO_order2_15weights_ref", "/tt_lep_rwgt_slc6_amd64_gcc630_CMSSW_9_3_0_tarball/llechner-bg_lep_dim6top_05June18-399ed716eb7225402bb4416ff36fe4d6/USER", "phys03", dbFile = dbFile, overwrite=overwrite, prefix='root://hephyse.oeaw.ac.at/')

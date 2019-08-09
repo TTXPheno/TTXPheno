@@ -19,7 +19,7 @@ special_cuts = {
   }
 
 continous_variables = [ ("mll", "recoZ_mass"), ("met", "recoMet_pt"), ("Zpt","recoZ_pt"), ("lepZpt","recoLepZ_pt"), ("gammapt","recoPhoton_pt[0]"), ("Wpt","recoW_pt"), ("relIso","genPhoton_relIso04[0]")]
-discrete_variables  = [ ("nlepttgamma2l", "Sum$(recoLep_pt>15&&(abs(recoLep_pdgId)==11||abs(recoLep_pdgId)==13)&&abs(recoLep_eta)<=2.4)"), ("nlep", "Sum$(recoLep_pt>10&&(abs(recoLep_pdgId)==11||abs(recoLep_pdgId)==13)&&abs(recoLep_eta)<2.5)"), ("njet", "nrecoJet"), ("nbjet", "nBTag") ]
+discrete_variables  = [ ("nlepttgamma2l", "Sum$(recoLep_pt>15&&(abs(recoLep_pdgId)==11||abs(recoLep_pdgId)==13)&&abs(recoLep_eta)<=2.4)"), ("nlep", "Sum$(recoLep_pt>10&&(abs(recoLep_pdgId)==11||abs(recoLep_pdgId)==13)&&abs(recoLep_eta)<2.5)"), ("njet", "nrecoJet"), ("nbjet", "nBTag_medium") ]
 
 from TTXPheno.Tools.CutInterpreter import CutInterpreter
 cutInterpreter = CutInterpreter( continous_variables, discrete_variables, special_cuts)
