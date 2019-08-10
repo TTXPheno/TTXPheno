@@ -59,7 +59,7 @@ if len(args.inputFiles)>0:
     sample = FWLiteSample( args.targetSampleName, args.inputFiles)
 else:
     if args.HEPMC:
-        sample_file = "$CMSSW_BASE/python/TTXPheno/samples/hepmc_samples_19_04.py"
+        sample_file = "$CMSSW_BASE/python/TTXPheno/samples/hepmc_samples_22_08.py"
         samples = imp.load_source( "samples", os.path.expandvars( sample_file ) )
         sample = getattr( samples, args.sample )[args.HEPMC]
     else:
@@ -82,7 +82,10 @@ lumiweight1fb = xsec * 1000. / nEvents
 output_directory = os.path.join(skim_output_directory, 'gen', args.targetDir, sample.name) 
 
 if not os.path.exists( output_directory ): 
-    os.makedirs( output_directory )
+    try:
+        os.makedirs( output_directory )
+    except OSError:
+        pass
     logger.info( "Created output directory %s", output_directory )
 
 # Load reweight pickle file if supposed to keep weights. 

@@ -67,7 +67,8 @@ if __name__ == "__main__":
 
 class HEPMCData(object):
 
-    pdfs      = ["0.01", "0.1", "1", "10", "30", "35", "37", "40", "42", "43", "44", "45", "50", "50", "75", "100"]
+    #pdfs      = ["0.01", "0.1", "1", "10", "30", "35", "37", "40", "42", "43", "44", "45", "50", "50", "75", "100"]
+    pdfs      = ["0.01", "0.1", "1", "10", "30", "35", "37", "42", "43", "44", "45", "50", "50", "75", "100"]
     processes = ["GH", "HG", "HH"]
 
     def __init__ ( self, name, directory, root_directory = None):
@@ -82,11 +83,14 @@ class HEPMCData(object):
         self.name         = name
         for pdf in HEPMCData.pdfs:
             for process in HEPMCData.processes:
-                self.samples_dict[pdf+'_'+process]          = HEPMCSample.fromDirectory( name+'_pdf-'+pdf+'_'+process, os.path.join( directory, 'pdf-%s'%pdf, process) )
-                self.samples_dict[pdf+'_'+process].xSection = HEPMCData.read_crosssection(  os.path.join( directory, 'pdf-%s'%pdf, "%s.out"%process) )
-                self.samples_dict[pdf+'_'+process].nEvents  = pickle.load( file(os.path.join( directory, 'pdf-%s'%pdf, "%s.pkl"%process)) )
+                self.samples_dict['pdf-'+pdf+'_'+process]          = HEPMCSample.fromDirectory( name+'_pdf-'+pdf+'_'+process, os.path.join( directory, 'pdf-%s'%pdf, process) )
+                self.samples_dict['pdf-'+pdf+'_'+process].xSection = HEPMCData.read_crosssection(  os.path.join( directory, 'pdf-%s'%pdf, "%s.out"%process) )
+                self.samples_dict['pdf-'+pdf+'_'+process].nEvents  = pickle.load( file(os.path.join( directory, 'pdf-%s'%pdf, "%s.pkl"%process)) )
                 if root_directory is not None:
-                    self.root_samples_dict[pdf+'_'+process] = Sample.fromDirectory( name+'_pdf-'+pdf+'_'+process, os.path.join( root_directory, '%s_%s_%s'%(name, pdf, process)) )
+                    self.root_samples_dict['pdf-'+pdf+'_'+process] = Sample.fromDirectory( name+'_pdf-'+pdf+'_'+process, os.path.join( root_directory, '%s_pdf-%s_%s'%(name, pdf, process)) )
+
+        for sample in self.samples:
+            sample.xsec = sample.xSection
 
     def __getitem__( self, key ):
         return self.samples_dict[key]
@@ -96,7 +100,7 @@ class HEPMCData(object):
         xsec = None
         with open(filename) as fp:
             for i, line in enumerate(fp):
-                if not line.startswith( 'Total (from generated events):'):
+                if not line.startswith( 'Total (from generated events):' ):
                     continue
                 xsec = float(re.sub(r'\([^)]*\)', '', line.rstrip().split()[-1]))
         return xsec
@@ -117,7 +121,7 @@ class HEPMCData(object):
     def root_files( self ):
         return sum( [s.files for s in self.root_samples], [] ) 
                
-#root_directory = "/afs/hephy.at/data/rschoefbeck01/TTXPheno/skims/gen/RunII_v01/"
+#root_directory = "/afs/hephy.at/data/rschoefbeck01/TTXPheno/skims/gen/RunII_v02/22_05/"
 root_directory = None
 
 ttbar  = HEPMCData( "ttbar", os.path.join( hepmc_directory, "ttbar" ), root_directory = root_directory)
