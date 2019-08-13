@@ -121,8 +121,8 @@ class HEPMCData(object):
     def root_files( self ):
         return sum( [s.files for s in self.root_samples], [] ) 
                
-#root_directory = "/afs/hephy.at/data/rschoefbeck01/TTXPheno/skims/gen/RunII_v02/22_05/"
-root_directory = None
+root_directory = "/afs/hephy.at/data/rschoefbeck01/TTXPheno/skims/gen/RunII_v02/22_05/"
+#root_directory = None
 
 ttbar  = HEPMCData( "ttbar", os.path.join( hepmc_directory, "ttbar" ), root_directory = root_directory)
-ttbarZ = HEPMCData( "ttbarZ", os.path.join( hepmc_directory, "ttbarZ" ), root_directory = root_directory)
+#ttbarZ = HEPMCData( "ttbarZ", os.path.join( hepmc_directory, "ttbarZ" ), root_directory = root_directory)
