@@ -316,7 +316,7 @@ def filler( event ):
         param_points = []
         for weight in lhe_weights:
             # Store nominal weight (First position!) 
-            if weight.id=='rwgt_1': event.rw_nominal = weight.wgt
+            if weight.id in ['rwgt_1','dummy']: event.rw_nominal = weight.wgt
             if not weight.id in weightInfo.id: continue
             pos = weightInfo.data[weight.id]
             event.rw_w[pos] = weight.wgt
