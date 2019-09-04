@@ -63,9 +63,13 @@
 #python genPostProcessing.py --targetDir PhaseII/22_05 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC PP --nJobs 5 --job 3 &
 #python genPostProcessing.py --targetDir PhaseII/22_05 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC PP --nJobs 5 --job 4 &
 
-python genPostProcessing.py --targetDir RunII_v02/22_05 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC pdf-test_HG #SPLIT5
-python genPostProcessing.py --targetDir RunII_v02/22_05 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC pdf-test_GH #SPLIT5
-python genPostProcessing.py --targetDir RunII_v02/22_05 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC pdf-test_HH #SPLIT5
+#python genPostProcessing.py --targetDir RunII_v02/22_05 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC pdf-test_HG #SPLIT5
+#python genPostProcessing.py --targetDir RunII_v02/22_05 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC pdf-test_GH #SPLIT5
+#python genPostProcessing.py --targetDir RunII_v02/22_05 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC pdf-test_HH #SPLIT5
+
+python genPostProcessing.py --targetDir RunII_v02/22_05 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC pdf-PP_HG #SPLIT5
+python genPostProcessing.py --targetDir RunII_v02/22_05 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC pdf-PP_GH #SPLIT5
+python genPostProcessing.py --targetDir RunII_v02/22_05 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC pdf-PP_HH #SPLIT5
 
 #python genPostProcessing.py --targetDir RunII_v02/22_05 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC PP #SPLIT5
 #python genPostProcessing.py --targetDir RunII_v02/22_05 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC pdf-0.01_HG #SPLIT5
