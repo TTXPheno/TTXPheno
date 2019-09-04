@@ -69,10 +69,11 @@ class HEPMCData(object):
 
     pdfs      = ["0.01", "0.1", "1", "10", "30", "35", "37", "40", "42", "43", "44", "45", "50", "50", "75", "100"]
     #pdfs      = ["0.01", "0.1", "1", "10", "30", "35", "37", "42", "43", "44", "45", "50", "50", "75", "100"]
-    processes = ["GH", "HG", "HH"]
+#    processes = ["GH", "HG", "HH"]
 
-    def __init__ ( self, name, directory, root_directory = None):
+    def __init__ ( self, name, directory, root_directory = None, processes = ["GH", "HG", "HH"] ):
 
+        self.processes = processes
         self.samples_dict = { 'PP':\
             HEPMCSample.fromDirectory( name+"_PP", os.path.join( directory, 'base', 'PP') ) }
         self.samples_dict['PP'].xSection = HEPMCData.read_crosssection(  os.path.join( directory, 'base', "PP.out") ) 
@@ -82,7 +83,7 @@ class HEPMCData(object):
         
         self.name         = name
         for pdf in HEPMCData.pdfs:
-            for process in HEPMCData.processes:
+            for process in self.processes:
                 self.samples_dict['pdf-'+pdf+'_'+process]          = HEPMCSample.fromDirectory( name+'_pdf-'+pdf+'_'+process, os.path.join( directory, 'pdf-%s'%pdf, process) )
                 self.samples_dict['pdf-'+pdf+'_'+process].xSection = HEPMCData.read_crosssection(  os.path.join( directory, 'pdf-%s'%pdf, "%s.out"%process) )
                 self.samples_dict['pdf-'+pdf+'_'+process].nEvents  = pickle.load( file(os.path.join( directory, 'pdf-%s'%pdf, "%s.pkl"%process)) )
@@ -126,3 +127,9 @@ root_directory = "/afs/hephy.at/data/rschoefbeck01/TTXPheno/skims/gen/RunII_v02/
 
 ttbar  = HEPMCData( "ttbar", os.path.join( hepmc_directory, "ttbar" ), root_directory = root_directory)
 #ttbarZ = HEPMCData( "ttbarZ", os.path.join( hepmc_directory, "ttbarZ" ), root_directory = root_directory)
+
+
+# Phase II Delphes Simulation
+root_directory = "/afs/hephy.at/data/rschoefbeck01/TTXPheno/skims/gen/PhaseII/22_05/"
+
+ttbar_phase2 = HEPMCData( "ttbar", os.path.join( hepmc_directory, "ttbar" ), root_directory = root_directory, processes = [])
