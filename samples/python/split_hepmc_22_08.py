@@ -79,7 +79,7 @@ def process_directory( directory, maxEvents, overwrite = False):
             if not overwrite and os.path.exists( os.path.join(directory, output_dir) ):
                 logger.info( "Found %s, do nothing", os.path.join(directory, output_dir) )
             else:
-                logger.info( "Splitting %s", filename)
+                logger.info( "Splitting %s", os.path.join(directory, filename))
                 # split
                 split_file( os.path.join(directory, filename), maxEvents)
                 # delete unzipped hepmc file

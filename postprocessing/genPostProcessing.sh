@@ -67,9 +67,17 @@
 #python genPostProcessing.py --targetDir RunII_v02/22_05 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC pdf-test_GH #SPLIT5
 #python genPostProcessing.py --targetDir RunII_v02/22_05 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC pdf-test_HH #SPLIT5
 
-python genPostProcessing.py --targetDir RunII_v02/22_05 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC pdf-PP_HG #SPLIT5
-python genPostProcessing.py --targetDir RunII_v02/22_05 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC pdf-PP_GH #SPLIT5
-python genPostProcessing.py --targetDir RunII_v02/22_05 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC pdf-PP_HH #SPLIT5
+#python genPostProcessing.py --targetDir RunII_v02/22_05 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC pdf-PP_HG #SPLIT5
+#python genPostProcessing.py --targetDir RunII_v02/22_05 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC pdf-PP_GH #SPLIT5
+#python genPostProcessing.py --targetDir RunII_v02/22_05 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC pdf-PP_HH #SPLIT5
+
+python genPostProcessing.py --targetDir RunII_v02/22_05 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC pdf-PPold_HG #SPLIT20
+python genPostProcessing.py --targetDir RunII_v02/22_05 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC pdf-PPold_GH #SPLIT20
+python genPostProcessing.py --targetDir RunII_v02/22_05 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC pdf-PPold_HH #SPLIT20
+
+python genPostProcessing.py --targetDir RunII_v02/22_05 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC pdf-PPLO_HG #SPLIT20
+python genPostProcessing.py --targetDir RunII_v02/22_05 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC pdf-PPLO_GH #SPLIT20
+python genPostProcessing.py --targetDir RunII_v02/22_05 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC pdf-PPLO_HH #SPLIT20
 
 #python genPostProcessing.py --targetDir RunII_v02/22_05 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC PP #SPLIT5
 #python genPostProcessing.py --targetDir RunII_v02/22_05 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC pdf-0.01_HG #SPLIT5
