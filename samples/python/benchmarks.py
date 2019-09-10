@@ -100,6 +100,12 @@ fwlite_tt_full_LO_order2_15weights_CMS               = Sample.fromDirectory("fwl
 fwlite_tt_full_LO_order2_15weights_CMS.reweight_pkl  = gridpack_dir + "06072018/tt_semilep/order2/tt_semilep_rwgt_slc6_amd64_gcc630_CMSSW_9_3_0_tarball.pkl"
 fwlite_tt_full_LO_order2_15weights_CMS.nEvents       = 10000000 
 fwlite_tt_full_LO_order2_15weights_CMS.xsec          = 494.9 * 831.76 / 485.8 #tt full gridpack * tt NLO Daniel / tt LO run.py UFO
+
+# Test sample to check new PP. Only 54/200 jobs, not meant for physics
+fwlite_tt_full_LO_order2_15weights_comp_CMS               = Sample.fromDirectory("fwlite_tt_full_LO_order2_15weights_comp",  texName = "tt",      directory = [os.path.join( "/afs/hephy.at/data/rschoefbeck01/TTXPheno/skims/gen/RunII_v02_tmp2/", "fwlite_tt_full_LO_order2_15weights" )]) 
+fwlite_tt_full_LO_order2_15weights_comp_CMS.reweight_pkl  = gridpack_dir + "06072018/tt_semilep/order2/tt_semilep_rwgt_slc6_amd64_gcc630_CMSSW_9_3_0_tarball.pkl"
+fwlite_tt_full_LO_order2_15weights_comp_CMS.nEvents       = 10000000 
+fwlite_tt_full_LO_order2_15weights_comp_CMS.xsec          = 494.9 * 831.76 / 485.8 #tt full gridpack * tt NLO Daniel / tt LO run.py UFO
 #check
 
 #fwlite_tt_dilep_LO_order2_15weights_CMS_delphes     = Sample.fromDirectory("fwlite_tt_dilep_LO_order2_15weights_delphes",  texName = "ttdilep",      directory = [os.path.join( gen_dir, "fwlite_tt_dilep_LO_order2_15weights", "delphes" )], treeName = "Delphes") 
