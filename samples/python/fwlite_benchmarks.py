@@ -174,7 +174,7 @@ fwlite_WZ_lep_LO_order2_15weights.reweight_pkl     = "/afs/hephy.at/data/llechne
 fwlite_WZ_lep_LO_order2_15weights.nEvents          = 1000000 
 fwlite_WZ_lep_LO_order2_15weights.xsec             = 4.666 #WZTo3LNu_amcatnlo #47.13*(3*0.108)*(3*0.0336) #pb WZ NLO Daniel * BR(Wlep) * BR(Zlep)
 
-fwlite_WJetsToLNu_order2_15weights                  = FWLiteSample.fromDAS("fwlite_WJetsToLNu_order2_15weights", "/WJetsToLNu/llechner-WJetsToLNu-fb70f294014ec1ad7cb60eb7e2f47502/USER", "phys03", dbFile = dbFile, overwrite=overwrite, prefix='root://hephyse.oeaw.ac.at/')
+fwlite_WJetsToLNu_order2_15weights                  = FWLiteSample.fromDAS("fwlite_WJetsToLNu_order2_15weights", "/WJetsToLNu_v2/llechner-WJetsToLNu_v2-77707354347402c56d8fc8cb9e1c2417/USER", "phys03", dbFile = dbFile, overwrite=overwrite, prefix='root://hephyse.oeaw.ac.at/')
 fwlite_WJetsToLNu_order2_15weights.reweight_pkl     = "/afs/hephy.at/data/llechner01/TTXPheno/gridpacks/WJetsToLNu3Jets/WJetsToLNu_13TeV-madgraphMLM-pythia8.pkl"
 fwlite_WJetsToLNu_order2_15weights.nEvents          = 1000000
 fwlite_WJetsToLNu_order2_15weights.xsec             = 3* 20508.9
