@@ -67,7 +67,7 @@ if __name__ == "__main__":
 
 class HEPMCData(object):
 
-    pdfs      = ["0.01", "0.1", "1", "10", "30", "35", "37", "40", "42", "43", "44", "45", "50", "50", "75", "100"]
+    pdfs      = ["0.01", "0.1", "1", "10", "30", "35", "37", "40", "42", "43", "44", "45", "50", "50", "75", "100", "test"]
     #pdfs      = ["0.01", "0.1", "1", "10", "30", "35", "37", "42", "43", "44", "45", "50", "50", "75", "100"]
 #    processes = ["GH", "HG", "HH"]
 
@@ -130,6 +130,5 @@ ttbar  = HEPMCData( "ttbar", os.path.join( hepmc_directory, "ttbar" ), root_dire
 
 
 # Phase II Delphes Simulation
-root_directory = "/afs/hephy.at/data/rschoefbeck01/TTXPheno/skims/gen/PhaseII/22_05/"
-
-ttbar_phase2 = HEPMCData( "ttbar", os.path.join( hepmc_directory, "ttbar" ), root_directory = root_directory, processes = [])
+#root_directory = "/afs/hephy.at/data/rschoefbeck01/TTXPheno/skims/gen/PhaseII/22_05/"
+#ttbar_phase2 = HEPMCData( "ttbar", os.path.join( hepmc_directory, "ttbar" ), root_directory = root_directory, processes = [])
