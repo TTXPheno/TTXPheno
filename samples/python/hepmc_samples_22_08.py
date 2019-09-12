@@ -67,7 +67,7 @@ if __name__ == "__main__":
 
 class HEPMCData(object):
 
-    pdfs      = ["0.01", "0.1", "1", "10", "30", "35", "37", "40", "42", "43", "44", "45", "50", "50", "75", "100", "test", "PP", "PPLO", "PPold"]
+    pdfs      = ["0.01", "0.1", "1", "10", "30", "35", "37", "40", "42", "43", "44", "45", "50", "50", "75", "100"]
     #pdfs      = ["0.01", "0.1", "1", "10", "30", "35", "37", "42", "43", "44", "45", "50", "50", "75", "100"]
     processes = ["GH", "HG", "HH"]
 
@@ -121,7 +121,7 @@ class HEPMCData(object):
     def root_files( self ):
         return sum( [s.files for s in self.root_samples], [] ) 
                
-root_directory = "/afs/hephy.at/data/rschoefbeck01/TTXPheno/skims/gen/RunII_v02/22_05/"
+root_directory = "/afs/hephy.at/data/rschoefbeck01/TTXPheno/skims/gen/RunII_v03/22_05/"
 #root_directory = None
 
 ttbar  = HEPMCData( "ttbar", os.path.join( hepmc_directory, "ttbar" ), root_directory = root_directory)
