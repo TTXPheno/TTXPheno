@@ -173,7 +173,9 @@
 #python genPostProcessing.py --targetDir RunII_v03/22_05 --logLevel DEBUG --sample  ttbarZ --delphes --delphesEra RunII --HEPMC pdf-75_HH #SPLIT5
 #python genPostProcessing.py --targetDir RunII_v03/22_05 --logLevel DEBUG --sample  ttbarZ --delphes --delphesEra RunII --HEPMC pdf-100_HH #SPLIT5
 #
-python genPostProcessing.py --targetDir RunII_v03/13_09 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC PP #SPLIT5
-python genPostProcessing.py --targetDir RunII_v03/13_09 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC pdf-x_HG #SPLIT5
-python genPostProcessing.py --targetDir RunII_v03/13_09 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC pdf-x_GH #SPLIT5
-python genPostProcessing.py --targetDir RunII_v03/13_09 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC pdf-x_HH #SPLIT5
+#python genPostProcessing.py --targetDir RunII_v03_noDelphesIso/13_09 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC PP #SPLIT5
+#python genPostProcessing.py --targetDir RunII_v03_noDelphesIso/13_09 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC pdf-x_HG #SPLIT5
+#python genPostProcessing.py --targetDir RunII_v03_noDelphesIso/13_09 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC pdf-x_GH #SPLIT5
+#python genPostProcessing.py --targetDir RunII_v03_noDelphesIso/13_09 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC pdf-x_HH #SPLIT5
+
+python genPostProcessing.py --targetDir RunII_v03 --logLevel DEBUG --interpolationOrder 2  --delphes --delphesEra RunII --sample fwlite_tt_full_LO_order2_15weights #SPLIT200
