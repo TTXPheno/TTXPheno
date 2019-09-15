@@ -59,7 +59,7 @@ if len(args.inputFiles)>0:
     sample = FWLiteSample( args.targetSampleName, args.inputFiles)
 else:
     if args.HEPMC:
-        sample_file = "$CMSSW_BASE/python/TTXPheno/samples/hepmc_samples_22_08.py"
+        sample_file = "$CMSSW_BASE/python/TTXPheno/samples/hepmc_samples_13_09.py"
         samples = imp.load_source( "samples", os.path.expandvars( sample_file ) )
         sample = getattr( samples, args.sample )[args.HEPMC]
     else:

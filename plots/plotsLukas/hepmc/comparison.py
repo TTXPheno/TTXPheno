@@ -42,7 +42,7 @@ logger    = logger.get_logger(   args.logLevel, logFile = None)
 logger_rt = logger_rt.get_logger(args.logLevel, logFile = None)
 
 # Samples
-from TTXPheno.samples.hepmc_samples      import *
+from TTXPheno.samples.hepmc_samples_13_09      import *
 hepSample = ttbarZ if args.sample == "ttZ" else ttbar
 nloXSec   = 0.0915/(0.10099) if args.sample == "ttZ" else 831.76 #inclusive NLO xsec
 hepSample.root_samples_dict = { name:sample for name, sample in hepSample.root_samples_dict.iteritems() if args.pdf in name or name == "PP"}
