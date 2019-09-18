@@ -38,7 +38,10 @@ class DelphesProducer:
 
         # Create output directory if necessary
         if not os.path.exists( os.path.dirname(outfile) ):
-            os.makedirs(os.path.dirname(outfile))
+            try:
+                os.makedirs(os.path.dirname(outfile))
+            except OSError:
+                pass
 
         # process files individually
         for i_infile, infile in enumerate(infiles):

@@ -36,7 +36,7 @@ argParser.add_argument('--HEPMC',              action='store',      nargs='?', d
 argParser.add_argument('--targetDir',          action='store',      default='v5')
 argParser.add_argument('--sample',             action='store',      default='fwlite_ttZ_ll_LO_scan', help="Name of the sample loaded from fwlite_benchmarks. Only if no inputFiles are specified")
 argParser.add_argument('--inputFiles',         action='store',      nargs = '*', default=[])
-argParser.add_argument('--delphesEra',         action='store',      default='delphes_card_CMS', choices = ["RunII", "PhaseII"], help="specify delphes era")
+argParser.add_argument('--delphesEra',         action='store',      default='delphes_card_CMS', choices = ["RunII", "RunIICentral", "RunIIPileUp", "PhaseII"], help="specify delphes era")
 argParser.add_argument('--targetSampleName',   action='store',      default=None, help="Name of the sample in case inputFile are specified. Otherwise ignored")
 argParser.add_argument('--nJobs',              action='store',      nargs='?', type=int, default=1,  help="Maximum number of simultaneous jobs.")
 argParser.add_argument('--job',                action='store',      nargs='?', type=int, default=0,  help="Run only job i")
@@ -59,7 +59,7 @@ if len(args.inputFiles)>0:
     sample = FWLiteSample( args.targetSampleName, args.inputFiles)
 else:
     if args.HEPMC:
-        sample_file = "$CMSSW_BASE/python/TTXPheno/samples/hepmc_samples_22_08.py"
+        sample_file = "$CMSSW_BASE/python/TTXPheno/samples/hepmc_samples_13_09.py"
         samples = imp.load_source( "samples", os.path.expandvars( sample_file ) )
         sample = getattr( samples, args.sample )[args.HEPMC]
     else:
@@ -273,6 +273,12 @@ if args.delphes:
     if args.delphesEra == 'RunII':
         from TTXPheno.Tools.DelphesReader          import DelphesReader
         delphesCard = 'delphes_card_CMS'
+    elif args.delphesEra == 'RunIICentral':
+        from TTXPheno.Tools.DelphesReader          import DelphesReader
+        delphesCard = 'delphes_card_CMS_Central'
+    elif args.delphesEra == 'RunIIPileUp':
+        from TTXPheno.Tools.DelphesReader          import DelphesReader
+        delphesCard = 'delphes_card_CMS_PileUp'
     elif args.delphesEra == 'PhaseII':
         from TTXPheno.Tools.DelphesReaderCMSHLLHC  import DelphesReader
         delphesCard = 'CMS_PhaseII/CMS_PhaseII_200PU_v03'
@@ -316,7 +322,7 @@ def filler( event ):
         param_points = []
         for weight in lhe_weights:
             # Store nominal weight (First position!) 
-            if weight.id=='rwgt_1': event.rw_nominal = weight.wgt
+            if weight.id in ['rwgt_1','dummy']: event.rw_nominal = weight.wgt
             if not weight.id in weightInfo.id: continue
             pos = weightInfo.data[weight.id]
             event.rw_w[pos] = weight.wgt
@@ -746,7 +752,10 @@ def filler( event ):
         recoPhotons = list(filter( lambda g: g['minJetDR']>0.4, recoPhotons))
 
         # cross-cleaning of reco-objects
+        nrecoLeps_uncleaned = len( recoLeps )
         recoLeps = filter( lambda l: (min([999]+[deltaR2(l, j) for j in recoJets if j['pt']>30]) > 0.3**2 ), recoLeps )
+        #logger.info( "Before photon cleaning: %i after: %i allRecoLeps: %i, recoLeps %i", nrecoLeps_uncleaned, len(recoLeps), len( allRecoLeps ), len( recoLeps ) )
+
         # give index to leptons
         addIndex( recoLeps )
     

@@ -30,7 +30,7 @@ argParser.add_argument('--logLevel',           action='store',      default='INF
 argParser.add_argument('--selection',          action='store',      default='all')#lepSel3-offZ-nJet2p-nBJet1p')
 argParser.add_argument('--version',            action='store',      default='v0')
 argParser.add_argument('--sample',             action='store',      default='tt', choices = ["tt", "ttZ"])
-argParser.add_argument('--pdf',                action='store',      default='1d0')
+argParser.add_argument('--pdf',                action='store',      default='pdf-x')
 argParser.add_argument('--small',              action='store_true',                                                                                  help='Run only on a small subset of the data?', )
 argParser.add_argument('--normalize',          action='store_true', default=False,                                                                   help="Normalize yields" )
 argParser.add_argument('--c',                  action='store',      default=0.1, type=float,                                                         help="BSM fraction" )
@@ -43,7 +43,7 @@ logger    = logger.get_logger(   args.logLevel, logFile = None)
 logger_rt = logger_rt.get_logger(args.logLevel, logFile = None)
 
 # Samples
-from TTXPheno.samples.hepmc_samples      import *
+from TTXPheno.samples.hepmc_samples_13_09      import *
 hepSample = ttbarZ if args.sample == "ttZ" else ttbar
 nloXSec   = 0.0915/(0.10099) if args.sample == "ttZ" else 831.76 #inclusive NLO xsec
 hepSample.root_samples_dict = { name:sample for name, sample in hepSample.root_samples_dict.iteritems() if args.pdf in name or name == "PP"}
@@ -224,7 +224,7 @@ sample_file     = "$CMSSW_BASE/python/TTXPheno/samples/benchmarks.py"
 loadedSamples   = imp.load_source( "samples", os.path.expandvars( sample_file ) )
 
 ttZSample       = getattr( loadedSamples, "fwlite_ttZ_ll_LO_order3_8weights" )
-ttSample        = getattr( loadedSamples, "fwlite_tt_full_LO_order2_15weights_CMS" )
+ttSample        = getattr( loadedSamples, "fwlite_tt_full_LO_order2_15weights_comp_CMS" )
 WZSample        = getattr( loadedSamples, "fwlite_WZ_lep_LO_order2_15weights_CMS" )
 ZGammaSample    = getattr( loadedSamples, "fwlite_Zgamma_LO_order2_15weights_CMS" )
 tWZSample       = getattr( loadedSamples, "fwlite_tWZ_LO_order2_15weights_CMS" )
