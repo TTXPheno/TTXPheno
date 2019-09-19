@@ -26,3 +26,12 @@ if os.environ['USER'] in ['grohsjea']:
     tmp_directory         = "/afs/cern.ch/work/g/grohsjea/debug/eft/ttx/tmp/"
     skim_output_directory = "/afs/cern.ch/work/g/grohsjea/samples/eft/ttx/skims/"
     plot_directory        = "/afs/desy.de/user/a/agrohsje/www/hidden/eft/ttx/"
+
+if os.environ["USER"] in ["ttschida"]:
+    plot_directory                      = "/afs/hephy.at/user/t/ttschida/www/HiggsWithoutHiggs/TTXPheno/"
+    results_directory                   = "/afs/hephy.at/data/cms04/ttschida/TTXPheno/results/"
+    tmp_directory                       = "/afs/hephy.at/data/cms04/ttschida/TTXPheno/tmp/"
+    cache_directory                     = "/afs/hephy.at/data/cms04/ttschida/TTXPheno/cache/"
+    gridpack_directory                  = "/afs/hephy.at/data/cms04/ttschida/TTXPheno/gridpacks/"
+    postprocessing_output_directory     = "/afs/hephy.at/data/cms04/ttschida/TTXPheno/Tuples/"
+    skim_output_directory               = "/afs/hephy.at/data/cms04/ttschida/TTXPheno/skims/"
