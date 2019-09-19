@@ -71,6 +71,11 @@ class DelphesReader( DelphesReaderBase ): # version RootTools reader
     def met( self ):
         return self.read_collection( 'MissingET', [('MET', 'pt'), ('Phi', 'phi')] )
 
+    def genParticles( self ):
+        return self.read_collection( 'Particle', 
+            [   ('PT', 'pt'), ( 'Eta', 'eta'), ('Phi', 'phi'), ('Status', 'status'), ('PID', 'pdgId')
+            ])
+
 #    def getEntry( self, entry ):
 #        # Set the Suchi-Reader 
 #        self.reader.GetEntry( entry )

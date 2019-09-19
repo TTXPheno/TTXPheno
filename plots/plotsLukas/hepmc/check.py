@@ -96,7 +96,7 @@ def drawPlots( plots, mode ):
             for j_hi, hi in enumerate(h):
                 if i_h == len(plot.histos)-1 or i_h == len(plot.histos)-2:
                     # fill style for bg
-                    hi.style = styles.fillStyle(bgcolors[j_hi])
+                    hi.style = styles.lineStyle(bgcolors[j_hi])
                 elif i_h == len(plot.histos)-3:
                     # fill style for signal PP
                     hi.style = styles.lineStyle( ROOT.kBlack, width=3  )
@@ -249,14 +249,14 @@ if args.sample == "ttZ":
     ]
 else:
     mc = [\
-          WZSample,
-          ZGammaSample,
-          ttZSample,
-          ttWSample,
+#          WZSample,
+#          ZGammaSample,
+#          ttZSample,
+#          ttWSample,
 #          ttgammaSample,
-          tZqSample,
-          tWZSample,
-          tWSample,
+#          tZqSample,
+#          tWZSample,
+#          tWSample,
     ]
 
 #colors
@@ -264,7 +264,7 @@ colors = {'PP':ROOT.kGreen+2, 'HH':ROOT.kOrange+10, 'HG':ROOT.kViolet+6, 'GH':RO
 bgcolors = [ ROOT.kRed+1, ROOT.kGreen+2, ROOT.kOrange+1, ROOT.kViolet+9, ROOT.kSpring-7, ROOT.kRed+2,  ROOT.kPink-9, ROOT.kBlue,  ROOT.kRed-7, ROOT.kRed-10, ROOT.kRed+3,  ROOT.kGreen-7, ROOT.kGreen-10 ]
 
 for i, s in enumerate(mc):
-    s.styles = styles.fillStyle( bgcolors[i] )
+    s.styles = styles.lineStyle( bgcolors[i] )
 
 lumi_scale = 136.6
 stackList = [ ]
@@ -284,20 +284,22 @@ for name, sample in hepSample.root_samples_dict.iteritems():
 #    totalSignal.append(sample)
 #stackList.append( totalSignal )
 
-stackList += [ [totSample] ]
+#stackList += [ [totSample] ]
 stackList += [ [ttZSample if args.sample == "ttZ" else ttSample] ]
-stackList += [ mc ]
+stackList += [ [totSample] ]
+#stackList += [ mc ]
 stack = Stack( *stackList )
 
 #for sample in stack.samples:
 #    print sample.name, sample.weightString
 eventScale = 1.
 if args.small:
-    for sample in stack.samples:
-        sample.normalization=1.
-        sample.reduceFiles( factor=10 )
-        eventScale = 1./sample.normalization
-        sample.addWeightString(eventScale)
+    ttSample.reduceFiles( factor = 10 )
+    #for sample in stack.samples:
+    #    sample.normalization=1.
+    #    sample.reduceFiles( factor=10 )
+    #    #eventScale = 1./sample.normalization
+    #    #sample.addWeightString(eventScale)
 
 weight_ = lambda event, sample: lumi_scale * event.lumiweight1fb
 
