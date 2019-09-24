@@ -8,7 +8,7 @@
 
 
 # ttZ Signal samples with reference point
-python genPostProcessing.py --overwrite target --targetDir v23 --logLevel DEBUG --sample fwlite_ttZ_ll_LO_order2_15weights_ref --addReweights --interpolationOrder 2  --delphes --delphesEra RunII #SPLIT200
+#python genPostProcessing.py --overwrite target --targetDir v23 --logLevel DEBUG --sample fwlite_ttZ_ll_LO_order2_15weights_ref --addReweights --interpolationOrder 2  --delphes --delphesEra RunII #SPLIT200
 
 ### ttZ background samples without reference point
 #python genPostProcessing.py --overwrite target --targetDir v23 --logLevel DEBUG --sample fwlite_WZ_lep_LO_order2_15weights --interpolationOrder 2  --delphes --delphesEra RunII #SPLIT200
@@ -25,7 +25,7 @@ python genPostProcessing.py --overwrite target --targetDir v23 --logLevel DEBUG 
 
 # ttgamma background samples without reference point
 #python genPostProcessing.py --overwrite target --targetDir v18 --logLevel DEBUG --sample fwlite_Zgamma_LO_order2_15weights --interpolationOrder 2  --delphes --delphesEra RunII #SPLIT200
-#python genPostProcessing.py --overwrite target --targetDir v20 --logLevel DEBUG --sample fwlite_tt_dilep_LO_order2_15weights --interpolationOrder 2  --delphes --delphesEra RunII #SPLIT200
+#python genPostProcessing.py --overwrite target --targetDir v20 --logLevel DEBUG --sample fwlite_tt_dilep_LO_order2_15weights --interpolationOrder 2  --delphes --delphesEra RunII #SPLIT2200
 #python genPostProcessing.py --overwrite target --targetDir v20 --logLevel DEBUG --sample fwlite_tt_nonhad_LO_order2_15weights --interpolationOrder 2  --delphes --delphesEra RunII #SPLIT200
 #python genPostProcessing.py --overwrite target --targetDir v20 --logLevel DEBUG --sample fwlite_tW_LO_order2_15weights --interpolationOrder 2  --delphes --delphesEra RunII #SPLIT200
 # large sample
@@ -283,4 +283,7 @@ python genPostProcessing.py --overwrite target --targetDir v23 --logLevel DEBUG 
 #python genPostProcessing.py --targetDir RunII_v03_noDelphesIso/13_09 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC pdf-x_GH #SPLIT5
 #python genPostProcessing.py --targetDir RunII_v03_noDelphesIso/13_09 --logLevel DEBUG --sample  ttbar --delphes --delphesEra RunII --HEPMC pdf-x_HH #SPLIT5
 
-python genPostProcessing.py --targetDir RunII_v03 --logLevel DEBUG --interpolationOrder 2  --delphes --delphesEra RunII --sample fwlite_tt_full_LO_order2_15weights #SPLIT200
+#python genPostProcessing.py --targetDir RunII_v03 --logLevel DEBUG --interpolationOrder 2  --delphes --delphesEra RunII --sample fwlite_tt_full_LO_order2_15weights #SPLIT200
+
+python genPostProcessing.py --logLevel DEBUG --sample --interpolationOrder 4 --delphes --delphesEra RunII --sample #SPLIT2000
+
