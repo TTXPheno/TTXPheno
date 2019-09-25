@@ -5,6 +5,7 @@ import ROOT, os, itertools
 ROOT.gROOT.SetBatch(True)
 
 from math                               import sqrt, cos, sin, pi, cosh
+import copy
 import pickle
 
 # RootTools
@@ -27,6 +28,7 @@ argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument('--logLevel',       action='store',      default='INFO',      nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE', 'NOTSET'], help="Log level for logging")
 argParser.add_argument('--small',          action='store_true',                                                                        help="Run the file on a small sample (for test purpose), bool flag set to True if used" )
 argParser.add_argument('--parameters',     action='store',      default = ['cpt', '1', 'ctp', '1', 'ctpI', '1', 'cpQM', '1', 'cpQ3', '1'],            type=str, nargs='+', help = "argument parameters")
+#argParser.add_argument('--parameters',     action='store',      default = ['cpt', '0', 'ctp', '0', 'ctpI', '0', 'cpQM', '0', 'cpQ3', '0'],            type=str, nargs='+', help = "argument parameters")
 argParser.add_argument('--order',          action='store',      default=4,               type=int, help='Polynomial order of weight string (e.g. 2)')
 argParser.add_argument('--selection',      action='store',      default='lepSel3-njet1p-nbjet1p')
 argParser.add_argument('--level',          action='store',     default='reco', nargs='?', choices=['reco', 'gen'], help='Which level of reconstruction? reco, gen')
@@ -111,16 +113,18 @@ sample = []
 
 from TTXPheno.samples.benchmarks import *
 
-sample = tWW1j_LO_order4_5weights
+#sample = tWW1j_LO_order4_5weights
+sample = fwlite_tWZ_LO_order2_15weights_CMS
 
 # ------- TODO ----------
 # Background
-#TTBar = TTBar_DILEP_LO_GEN
+TTBar = fwlite_tt_full_LO_order2_15weights_CMS
 #TW = TW_LO_GEN
 #TTZ = TTZ_LO_GEN
 #WZ = WZ_LO_GEN
 
-bg = [ TTBar, TW, TTZ, WZ ]
+#bg = [ TTBar, TW, TTZ, WZ ]
+bg = [ TTBar ]
 
 # Polynomial parametrization
 w = WeightInfo( sample.reweight_pkl )
@@ -149,17 +153,20 @@ stackList = [ [sample] for param in params ]
 # draw all bg filled
 bgParams = []
 stackList += [ bg ]
-bgParams = [[ {'legendText':s.name.split('_')[0], 'WC':{}, 'color':colorsBg[i]} for i, s in enumerate(bg) ]]
+bgParams = [[ {'legendText':s.name.split('_')[1], 'WC':{}, 'color':colorsBg[i]} for i, s in enumerate(bg) ]]
 
 stack = Stack( *stackList )
 
 allParams = params + bgParams
 
+#print allParams
+#exit()
+
 # Reweight
-def get_reweight( params, sample_ ):
+def get_reweight( param, sample_ ):
    
+    print w.get_weight_string( **param['WC'] )
     func_ = w.get_weight_func( **param['WC'] )   
-    #print w.get_weight_string( **params )
     
     def reweightRef( event, sample ):
         return func_( event, sample ) * event.ref_lumiweight1fb * float(args.luminosity) * float(sample.event_factor)
@@ -170,6 +177,7 @@ def get_reweight( params, sample_ ):
     return reweightRef if checkReferencePoint( sample_ ) else reweightNoRef
 
 weight = [ [ get_reweight( allParams[i][j], sample_ ) for j, sample_ in enumerate(stackComponent) ] for i, stackComponent in enumerate(stack) ]
+
 
 # Text on the plots
 def drawObjects( ):
@@ -293,6 +301,7 @@ def makeObservables( event, sample, level):
     event.passing_checks = event.passing_leptons and event.passing_bjets
 
 sequence = []
+level = args.level
 
 sequence.append( lambda event, sample: makeJets( event, sample, level ) )
 sequence.append( lambda event, sample: makeMET( event, sample, level ) )
@@ -393,17 +402,78 @@ plots.append( Plot(
     binning   = [ 4, 0, 4 ],
 ))
 
-plotting.fill(plots, read_variables = read_variables, sequence=sequence)
+plotting.fill(plots, read_variables = read_variables, sequence = sequence, max_events = -1 if args.small else -1)
+
+for plot in plots:
+    histoIndexSM    = len(params) - 1
+    histoIndexBg    = len(params) if len(bgParams) != 0 else float('inf')
+
+    for i_h, h in enumerate(plot.histos):
+        for j_hi, hi in enumerate(h):
+            if i_h == histoIndexBg:
+                # fill style for bg
+                hi.style = styles.fillStyle(allParams[i_h][j_hi]['color'])
+            else:
+                # fill style for signal and WC
+                hi.style = styles.lineStyle(allParams[i_h][j_hi]['color'])
+                hi.SetLineWidth(2)
+                if i_h == histoIndexSM:
+                    hi.SetLineWidth(3)
+
 
 for log in [False, True]:
     plot_directory_ = os.path.join(plot_directory, '%s'%(args.level), subDirectory, args.selection if args.selection is not None else 'no_selection', 'log' if log else 'lin')
-    for plot in plots:
+    
+    # plot the legend
+    l_plot = copy.deepcopy(plots[0])
+    for i_h, h in enumerate(l_plot.histos):
+        for j_hi, hi in enumerate(h):
+            hi.legendText = allParams[i_h][j_hi]['legendText']
+            if i_h == histoIndexBg: 
+                hi.style = styles.fillStyle(allParams[i_h][j_hi]['color'])
+            else:
+                hi.style = styles.lineStyle(allParams[i_h][j_hi]['color'])
+            hi.Scale(0.)
+            hi.GetXaxis().SetTickLength(0.)
+            hi.GetYaxis().SetTickLength(0.)
+            hi.GetXaxis().SetLabelOffset(999.)
+            hi.GetYaxis().SetLabelOffset(999.)
+    l_plot.name = "legend"
+    l_plot.texX = ' '
+    l_plot.texY = ' '
+
+    plotting.draw(l_plot,
+        plot_directory = plot_directory_,
+        ratio = None,
+        logX = False, logY = log, sorting = True,
+        legend = ( (0.17,0.9-0.05*sum(map(len, l_plot.histos))/3,0.9,0.9), 3),
+        drawObjects = drawObjects(),
+        copyIndexPHP = True,
+    )
+
+    # plot the plots
+    for p, plot in enumerate(plots):
+        histoIndexSM    = len(params) - 1
+        histoIndexBg    = len(params) if len(bgParams) != 0 else float('inf')
+
+        for i_h, h in enumerate(plot.histos):
+            for j_hi, hi in enumerate(h):
+                hi.legendText = allParams[i_h][j_hi]['legendText']
+                hi.GetXaxis().SetTickLength(0.04)
+                hi.GetYaxis().SetTickLength(0.04)
+                hi.GetYaxis().SetTitleOffset(1.)
+                hi.GetXaxis().SetTitleSize(0.035)
+                hi.GetYaxis().SetTitleSize(0.035)
+   
+        if not max(l[0].GetMaximum() for l in plot.histos): continue # Empty plot
+        
         plotting.draw(plot, 
             plot_directory = plot_directory_,
             ratio = None,
             logX = False, logY = log, sorting = True, 
-            yRange = (0.03, "auto") if log else (0.001, "auto"),
-            drawObjects = drawObjects( ),
+            yRange = (0.03, "auto") if log else (0., "auto"),
+            legend = ( (0.17,0.9-0.05*sum(map(len, plot.histos))/3,0.9,0.9), 3),
+            drawObjects = drawObjects(),
             copyIndexPHP = True,
         )
 
