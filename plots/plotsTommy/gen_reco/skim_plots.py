@@ -27,24 +27,25 @@ import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument('--logLevel',       action='store',      default='INFO',      nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE', 'NOTSET'], help="Log level for logging")
 argParser.add_argument('--small',          action='store_true',                                                                        help="Run the file on a small sample (for test purpose), bool flag set to True if used" )
-argParser.add_argument('--parameters',     action='store',      default = ['cpt', '1', 'ctp', '1', 'ctpI', '1', 'cpQM', '1', 'cpQ3', '1'],            type=str, nargs='+', help = "argument parameters")
+argParser.add_argument('--parameters',     action='store',      default = ['cpt', '1', 'ctp', '1', 'cpQM', '1', 'cpQ3', '1'],            type=str, nargs='+', help = "argument parameters")
 #argParser.add_argument('--parameters',     action='store',      default = ['cpt', '0', 'ctp', '0', 'ctpI', '0', 'cpQM', '0', 'cpQ3', '0'],            type=str, nargs='+', help = "argument parameters")
 argParser.add_argument('--order',          action='store',      default=4,               type=int, help='Polynomial order of weight string (e.g. 2)')
-argParser.add_argument('--selection',      action='store',      default='lepSel3-njet1p-nbjet1p')
+#argParser.add_argument('--selection',      action='store',      default='lepSel3-njet1p-nbjet1p')
+argParser.add_argument('--selection',      action='store',  default='lepSel2-njet1p-nbjet1p')
 argParser.add_argument('--level',          action='store',     default='reco', nargs='?', choices=['reco', 'gen'], help='Which level of reconstruction? reco, gen')
 argParser.add_argument('--luminosity',     action='store',     default=136.6, help='Luminosity for weighting the plots')
-argParser.add_argument('--variables',      action='store',     default = ['cpt', 'ctp', 'ctpI', 'cpQM', 'cpQ3'], type=str, nargs='+', help = "argument variables")
+argParser.add_argument('--variables',      action='store',     default = ['cpt', 'ctp', 'cpQM', 'cpQ3'], type=str, nargs='+', help = "argument variables")
 args = argParser.parse_args()
 
 # Import additional functions/classes specified for the level of reconstruction
 if args.level == 'reco':
     from TTXPheno.Tools.cutInterpreterReco  import cutInterpreter
-    from TTXPheno.Tools.objectSelection     import isGoodRecoJet as isGoodJet
+    from TTXPheno.Tools.objectSelection     import isGoodRecoJet    as isGoodJet
     from TTXPheno.Tools.objectSelection     import isGoodRecoLepton as isGoodLepton
 else:
     from TTXPheno.Tools.cutInterpreterGen   import cutInterpreter
-    from TTXPheno.Tools.objectSelection     import isGoodGenJet as isGoodJet
-    from TTXPheno.Tools.objectSelection     import isGoodGenLepton as isGoodLepton
+    from TTXPheno.Tools.objectSelection     import isGoodGenJet     as isGoodJet
+    from TTXPheno.Tools.objectSelection     import isGoodGenLepton  as isGoodLepton
 
 preTag = 'reco' if args.level == 'reco' else 'gen'
 tag    = 'reco' if args.level == 'reco' else 'genLep'
@@ -85,26 +86,24 @@ params.append( [{'legendText':'SM', 'WC':{}, 'color':ROOT.kBlack}] )
 read_variables_gen = [
                       "lumiweight1fb/F",
                       "genMet_pt/F", "genMet_phi/F",
-                      "ngenJet/I", #"genJet[pt/F,eta/F,phi/F]",
-                      "ngenLep/I", #"genLep[pt/F,eta/F,phi/F,pdgId/I]",
-                      "genW_pt/F", "genW_eta/F", "genW_phi/F", "genW_mass/F",
+                      "ngenJet/I",
+                      "ngenLep/I",
+#                      "genW_pt/F", "genW_eta/F", "genW_phi/F", "genW_mass/F",
                       "genBj0_pt/F", "genBj0_phi/F", "genBj0_eta/F",
                       "genBj1_pt/F", "genBj1_phi/F", "genBj1_eta/F",
                      ]
 
 # List of variables where genLep is replaced by reco for reco
-read_variables_genLep = []
 
 if args.level == 'reco':
     read_variables_gen    = [ variable.replace('gen', 'reco') for variable in read_variables_gen ]
-    read_variables_genLep = [ variable.replace('genLep', 'reco') for variable in read_variables_genLep ]
     read_variables_gen.append("recoJet[pt/F,eta/F,phi/F,bTag/F]")
-    read_variables_gen.append("recoLep[pt/F,eta/F,phi/F,pdgId/I,isolationVar/F,isolationVarRhoCorr/F,sumPtCharged/F,sumPtNeutral/F,sumPtChargedPU/F,sumPt/F,ehadOverEem/F,genIndex/I]")
+    read_variables_gen.append("recoLep[pt/F,eta/F,phi/F,pdgId/I,isolationVar/F,isolationVarRhoCorr/F,sumPtCharged/F,sumPtNeutral/F,sumPtChargedPU/F,sumPt/F,ehadOverEem/F]")#,genIndex/I]")
 else:
     read_variables_gen.append("genLep[pt/F,phi/F,eta/F,pdgId/I]")
     read_variables_gen.append("genJet[pt/F,eta/F,phi/F,matchBParton/I]")
 
-read_variables = read_variables_gen + read_variables_genLep
+read_variables = read_variables_gen
 read_variables = list( set( read_variables ) ) # remove double entries
 #read_variables.append( VectorTreeVariable.fromString('p[C/F]', nMax=2000) )
 
@@ -178,7 +177,6 @@ def get_reweight( param, sample_ ):
 
 weight = [ [ get_reweight( allParams[i][j], sample_ ) for j, sample_ in enumerate(stackComponent) ] for i, stackComponent in enumerate(stack) ]
 
-
 # Text on the plots
 def drawObjects( ):
     tex = ROOT.TLatex()
@@ -201,19 +199,10 @@ def addTLorentzVector( p_dict ):
     '''
     p_dict['vec4D'] = ROOT.TLorentzVector()
     p_dict['vec4D'].SetPtEtaPhiM( p_dict['pt'], p_dict['eta'], p_dict['phi'], 0 )
-#    p_dict['vec4D'] = ROOT.TLorentzVector( p_dict['pt']*cos(p_dict['phi']), p_dict['pt']*sin(p_dict['phi']),  p_dict['pt']*sinh(p_dict['eta']), 0 )
-
-def UnitVectorT2( phi ):
-    ''' 2D Unit Vector
-    '''
-    return ROOT.TVector2( cos(phi), sin(phi) )
 
 def makeJets( event, sample, level ):
     ''' Add a list of filtered jets to the event (full list is required for lepton cross cleaning)
     '''
-    preTag = 'reco' if level == 'reco' else 'gen'
-    tag    = 'reco' if level == 'reco' else 'genLep'
-
     # load jets
     btag = 'bTag' if level == 'reco' else 'matchBParton'
     event.jets = getCollection( event, '%sJet'%preTag, ['pt', 'eta', 'phi', btag ], 'n%sJet'%preTag )
@@ -230,7 +219,7 @@ def makeJets( event, sample, level ):
 
     # Import additional functions/classes specified for the level of reconstruction
     if level == 'reco': from TTXPheno.Tools.objectSelection  import isGoodRecoJet       as isGoodJet
-    else:               from TTXPheno.Tools.objectSelection  import isGoodGenJet      as isGoodJet
+    else:               from TTXPheno.Tools.objectSelection  import isGoodGenJet        as isGoodJet
 
     # selection checks
     event.foundBj0 =  isGoodJet( event.bj0 )
@@ -247,57 +236,40 @@ def makeMET( event, sample, level ):
     event.MET = {'pt':getattr(event, '%sMet_pt'%preTag), 'phi':getattr(event, '%sMet_phi'%preTag)}
     addTransverseVector( event.MET )
 
-def makeW( event, sample, level ):
-    ''' Make a W vector to facilitate further calculations (either recoZ, genLepZ or genZ)
-    '''
-    event.W_unitVec2D = UnitVectorT2( getattr( event, '%sW_phi'%level     ) )
-    event.W_vec4D     = ROOT.TLorentzVector()
-    event.W_vec4D.SetPtEtaPhiM( getattr( event, '%sW_pt'%level ), getattr( event, '%sW_eta'%level ), getattr( event, '%sW_phi'%level ), getattr( event, '%sW_mass'%level     ) )
-    event.W_unitVec3D = event.W_vec4D.Vect().Unit()
-
 def makeLeps( event, sample, level ):
     ''' Add important leptons (no full list of leptons is required for now)
     '''
     preTag = 'reco' if level == 'reco' else 'gen'
     tag    = 'reco' if level == 'reco' else 'genLep'
 
-    # Define W leptons
-    event.W_l0 = getObjDict( event, '%sLep_'%preTag, ['pt', 'eta', 'phi', 'pdgId'], 0 )
-    event.W_l1 = getObjDict( event, '%sLep_'%preTag, ['pt', 'eta', 'phi', 'pdgId'], 1 )
+    event.leps = getCollection( event, '%sLep'%preTag, ['pt', 'eta', 'phi', 'pdgId'], 'n%sLep'%preTag )     
+
+    # Define hardest leptons
+    event.l0 = event.leps[0]
+    event.l1 = event.leps[1]
 
     # Add extra vectors
-    for p in [ event.W_l0, event.W_l1]:
+    for p in [ event.l0, event.l1]:
         addTransverseVector( p )
         addTLorentzVector( p )
 
     # Import additional functions/classes specified for the level of reconstruction
     if level == 'reco': from TTXPheno.Tools.objectSelection  import isGoodRecoLepton    as isGoodLepton
-    else:               from TTXPheno.Tools.objectSelection  import isGoodGenLepton   as isGoodLepton
+    else:               from TTXPheno.Tools.objectSelection  import isGoodGenLepton     as isGoodLepton
 
     # We may loose some events by cross-cleaning or by thresholds.
-    event.foundWl0     = isGoodLepton( event.W_l0 )
-    event.foundWl1     = isGoodLepton( event.W_l1 )
-    event.found2lep    = event.W_l0['pdgId'] * event.W_l1['pdgId'] > 0
+    event.found1lep    = isGoodLepton( event.l0 )
+    event.found2lep    = isGoodLepton( event.l1) and len(event.leps) == 2
+    event.oppositeSign = event.l0['pdgId']*event.l1['pdgId'] < 0
+    event.sameFlavor   = abs(event.l0['pdgId']) == abs(event.l1['pdgId'])
 
     # choose your selection on leptons
-    event.passing_leptons = event.found2lep and event.foundWl0 and event.foundWl1
+    event.passing_leptons = event.found1lep and event.found2lep and event.oppositeSign
 
 def makeObservables( event, sample, level):
     ''' Compute all relevant observables
     '''
-    # double b kinematic
-    event.bbdPhi = deltaPhi( event.bj0['phi'], event.bj1['phi'] )
-    event.bbdR   = deltaR( event.bj0, event.bj1 )
-
-    # double l kinematic
-    event.lldPhi = deltaPhi( event.W_l0['phi'], event.W_l1['phi'] )
-    event.lldR   = deltaR( event.W_l0, event.W_l1 )
-
-    # signed lepton pt
-    event.lep0chargept = event.W_l0['pt'] if event.W_l0['pdgId']>0 else -event.W_l0['pt']
-    event.lep1chargept = event.W_l1['pt'] if event.W_l1['pdgId']>0 else -event.W_l1['pt']
-
-    # choose your final selection
+    # TODO 
     event.passing_checks = event.passing_leptons and event.passing_bjets
 
 sequence = []
@@ -305,7 +277,6 @@ level = args.level
 
 sequence.append( lambda event, sample: makeJets( event, sample, level ) )
 sequence.append( lambda event, sample: makeMET( event, sample, level ) )
-sequence.append( lambda event, sample: makeW( event, sample, level ) )
 sequence.append( lambda event, sample: makeLeps( event, sample, level ) )
 sequence.append( lambda event, sample: makeObservables( event, sample, level ) )
 
@@ -326,7 +297,7 @@ plots.append( Plot(
     name      = 'l0_pt',
     texX      = 'p_{T}(l_{0}) (GeV)',
     texY      = 'Number of Events / 25 GeV',
-    attribute = lambda event, sample: event.W_l0['pt'] if event.passing_checks else float('nan'),
+    attribute = lambda event, sample: event.l0['pt'] if event.passing_checks else float('nan'),
     binning   = [ 12, 0 , 300 ],
 ))
 
@@ -334,7 +305,7 @@ plots.append( Plot(
     name      = 'l0_eta',
     texX      = '#\eta(l_{0})',
     texY      = 'Number of Events',
-    attribute = lambda event, sample: event.W_l0['eta'] if event.passing_checks else float('nan'),    
+    attribute = lambda event, sample: event.l0['eta'] if event.passing_checks else float('nan'),    
     binning   = [ 20, -3, 3 ],
 ))
 
@@ -342,7 +313,7 @@ plots.append( Plot(
     name      = 'l1_pt',
     texX      = 'p_{T}(l_{1}) (GeV)',
     texY      = 'Number of Events / 25 GeV',
-    attribute = lambda event, sample: event.W_l1['pt'] if event.passing_checks else float('nan'),
+    attribute = lambda event, sample: event.l1['pt'] if event.passing_checks else float('nan'),
     binning   = [ 12, 0, 300 ],
 ))
 
@@ -350,7 +321,7 @@ plots.append( Plot(
     name      = 'l1_eta',
     texX      = '#\eta(l_{1})',
     texY      = 'Number of Events',
-    attribute = lambda event, sample: event.W_l1['eta'] if event.passing_checks else float('nan'),
+    attribute = lambda event, sample: event.l1['eta'] if event.passing_checks else float('nan'),
     binning   = [ 20, -3, 3 ],
 ))
 
@@ -464,9 +435,9 @@ for log in [False, True]:
                 hi.GetYaxis().SetTitleOffset(1.)
                 hi.GetXaxis().SetTitleSize(0.035)
                 hi.GetYaxis().SetTitleSize(0.035)
-   
+
         if not max(l[0].GetMaximum() for l in plot.histos): continue # Empty plot
-        
+
         plotting.draw(plot, 
             plot_directory = plot_directory_,
             ratio = None,
