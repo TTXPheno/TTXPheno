@@ -1,3 +1,4 @@
+7
 #!/usr/bin/env python
 
 # Standard imports and batch mode
@@ -27,14 +28,16 @@ import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument('--logLevel',       action='store',      default='INFO',      nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE', 'NOTSET'], help="Log level for logging")
 argParser.add_argument('--small',          action='store_true',                                                                        help="Run the file on a small sample (for test purpose), bool flag set to True if used" )
-argParser.add_argument('--parameters',     action='store',      default = ['cpt', '1', 'ctp', '1', 'cpQM', '1', 'cpQ3', '1'],            type=str, nargs='+', help = "argument parameters")
-#argParser.add_argument('--parameters',     action='store',      default = ['cpt', '0', 'ctp', '0', 'ctpI', '0', 'cpQM', '0', 'cpQ3', '0'],            type=str, nargs='+', help = "argument parameters")
-argParser.add_argument('--order',          action='store',      default=4,               type=int, help='Polynomial order of weight string (e.g. 2)')
+#argParser.add_argument('--parameters',     action='store',      default = ['cpt', '1', 'ctp', '1', 'cpQM', '1', 'cpQ3', '1'],            type=str, nargs='+', help = "argument parameters")
+argParser.add_argument('--parameters',     action='store',      default = ['cpt', '1'],            type=str, nargs='+', help = "argument parameters")
+argParser.add_argument('--order',          action='store',      default=3,               type=int, help='Polynomial order of weight string (e.g. 2)')
 #argParser.add_argument('--selection',      action='store',      default='lepSel3-njet1p-nbjet1p')
-argParser.add_argument('--selection',      action='store',  default='lepSel2-njet1p-nbjet1p')
+argParser.add_argument('--selection',      action='store',  default='dilepSS-met30-njet2p-nbjet1p')
 argParser.add_argument('--level',          action='store',     default='reco', nargs='?', choices=['reco', 'gen'], help='Which level of reconstruction? reco, gen')
-argParser.add_argument('--luminosity',     action='store',     default=136.6, help='Luminosity for weighting the plots')
-argParser.add_argument('--variables',      action='store',     default = ['cpt', 'ctp', 'cpQM', 'cpQ3'], type=str, nargs='+', help = "argument variables")
+#argParser.add_argument('--luminosity',     action='store',     default=136.6, help='Luminosity for weighting the plots')
+argParser.add_argument('--luminosity',     action='store',     default=35.9, help='Luminosity for weighting the plots')
+#argParser.add_argument('--variables',      action='store',     default = ['cpt', 'ctp', 'cpQM', 'cpQ3'], type=str, nargs='+', help = "argument variables")
+argParser.add_argument('--variables',      action='store',     default = ['cpt'], type=str, nargs='+', help = "argument variables")
 args = argParser.parse_args()
 
 # Import additional functions/classes specified for the level of reconstruction
@@ -88,7 +91,6 @@ read_variables_gen = [
                       "genMet_pt/F", "genMet_phi/F",
                       "ngenJet/I",
                       "ngenLep/I",
-#                      "genW_pt/F", "genW_eta/F", "genW_phi/F", "genW_mass/F",
                       "genBj0_pt/F", "genBj0_phi/F", "genBj0_eta/F",
                       "genBj1_pt/F", "genBj1_phi/F", "genBj1_eta/F",
                      ]
@@ -97,8 +99,9 @@ read_variables_gen = [
 
 if args.level == 'reco':
     read_variables_gen    = [ variable.replace('gen', 'reco') for variable in read_variables_gen ]
-    read_variables_gen.append("recoJet[pt/F,eta/F,phi/F,bTag/F]")
+    read_variables_gen.append("recoJet[pt/F,eta/F,phi/F,bTag/F,nCharged/I,nNeutrals/I]")
     read_variables_gen.append("recoLep[pt/F,eta/F,phi/F,pdgId/I,isolationVar/F,isolationVarRhoCorr/F,sumPtCharged/F,sumPtNeutral/F,sumPtChargedPU/F,sumPt/F,ehadOverEem/F]")#,genIndex/I]")
+    #read_variables_gen.append("recoZ_mass/F")
 else:
     read_variables_gen.append("genLep[pt/F,phi/F,eta/F,pdgId/I]")
     read_variables_gen.append("genJet[pt/F,eta/F,phi/F,matchBParton/I]")
@@ -112,18 +115,18 @@ sample = []
 
 from TTXPheno.samples.benchmarks import *
 
-#sample = tWW1j_LO_order4_5weights
-sample = fwlite_tWZ_LO_order2_15weights_CMS
+sample = fwlite_ttW_LO_order3_8weights
+#sample = fwlite_ttZ_ll_LO_order3_8weights
 
-# ------- TODO ----------
 # Background
 TTBar = fwlite_tt_full_LO_order2_15weights_CMS
-#TW = TW_LO_GEN
-#TTZ = TTZ_LO_GEN
-#WZ = WZ_LO_GEN
+TW = fwlite_tW_LO_order2_15weights_CMS
+TTZ = fwlite_ttZ_ll_LO_order2_15weights_ref_ext_phase2_CMS 
+WZ = fwlite_WZ_lep_LO_order2_15weights_CMS 
+#TTW = fwlite_ttW_LO_order3_8weights
 
-#bg = [ TTBar, TW, TTZ, WZ ]
-bg = [ TTBar ]
+bg = [ TTBar, TW, TTZ, WZ ]
+#bg = [ TTBar, TW, TTW, WZ ]
 
 # Polynomial parametrization
 w = WeightInfo( sample.reweight_pkl )
@@ -142,6 +145,7 @@ if args.small:
 for s in [sample] + bg:
     # Scale the plots with number of events used (implemented in ref_lumiweight1fb)
     s.event_factor = s.nEvents / float( s.chain.GetEntries() )
+    print cutInterpreter.cutString(args.selection)
     s.setSelectionString( cutInterpreter.cutString(args.selection) )
     if checkReferencePoint( s ):
         s.read_variables = ["ref_lumiweight1fb/F", VectorTreeVariable.fromString('p[C/F]', nMax=2000)]
@@ -158,13 +162,10 @@ stack = Stack( *stackList )
 
 allParams = params + bgParams
 
-#print allParams
-#exit()
-
 # Reweight
 def get_reweight( param, sample_ ):
    
-    print w.get_weight_string( **param['WC'] )
+#    print w.get_weight_string( **param['WC'] )
     func_ = w.get_weight_func( **param['WC'] )   
     
     def reweightRef( event, sample ):
@@ -200,6 +201,11 @@ def addTLorentzVector( p_dict ):
     p_dict['vec4D'] = ROOT.TLorentzVector()
     p_dict['vec4D'].SetPtEtaPhiM( p_dict['pt'], p_dict['eta'], p_dict['phi'], 0 )
 
+def get4DVec( part ):
+    vec = ROOT.TLorentzVector()
+    vec.SetPtEtaPhiM( part['pt'], part['eta'], part['phi'], 0 )
+    return vec
+
 def makeJets( event, sample, level ):
     ''' Add a list of filtered jets to the event (full list is required for lepton cross cleaning)
     '''
@@ -207,7 +213,7 @@ def makeJets( event, sample, level ):
     btag = 'bTag' if level == 'reco' else 'matchBParton'
     event.jets = getCollection( event, '%sJet'%preTag, ['pt', 'eta', 'phi', btag ], 'n%sJet'%preTag )
     event.bjets = list( filter( lambda j: j[btag], event.jets ) )
-
+        
     # get (second) hardest bjets
     event.bj0 = {'pt':getattr( event, '%sBj0_pt'%preTag ), 'phi':getattr( event, '%sBj0_phi'%preTag ), 'eta':getattr( event, '%sBj0_eta'%preTag )}
     event.bj1 = {'pt':getattr( event, '%sBj1_pt'%preTag ), 'phi':getattr( event, '%sBj1_phi'%preTag ), 'eta':getattr( event, '%sBj1_eta'%preTag )}
@@ -217,36 +223,37 @@ def makeJets( event, sample, level ):
         addTransverseVector( p )
         addTLorentzVector( p )
 
+    event.ht = sum( [ j["pt"] for j in event.jets ] )
+
     # Import additional functions/classes specified for the level of reconstruction
     if level == 'reco': from TTXPheno.Tools.objectSelection  import isGoodRecoJet       as isGoodJet
     else:               from TTXPheno.Tools.objectSelection  import isGoodGenJet        as isGoodJet
 
     # selection checks
-    event.foundBj0 =  isGoodJet( event.bj0 )
-   
+    event.foundBj0 = isGoodJet( event.bj0 )
+    if len(event.jets) > 1:
+        event.foundBj1 = isGoodJet( event.bj1 )
+    else: 
+        event.foundBj1 = True
+
     # choose your selection on b-jets
-    event.passing_bjets = event.foundBj0
+    event.passing_bjets = event.foundBj0 and event.foundBj1
 
 def makeMET( event, sample, level ):
     ''' Make a MET vector to facilitate further calculations
     '''
-    preTag = 'reco' if level == 'reco' else 'gen'
-    tag    = 'reco' if level == 'reco' else 'genLep'
-
     event.MET = {'pt':getattr(event, '%sMet_pt'%preTag), 'phi':getattr(event, '%sMet_phi'%preTag)}
     addTransverseVector( event.MET )
 
 def makeLeps( event, sample, level ):
     ''' Add important leptons (no full list of leptons is required for now)
     '''
-    preTag = 'reco' if level == 'reco' else 'gen'
-    tag    = 'reco' if level == 'reco' else 'genLep'
-
     event.leps = getCollection( event, '%sLep'%preTag, ['pt', 'eta', 'phi', 'pdgId'], 'n%sLep'%preTag )     
 
     # Define hardest leptons
     event.l0 = event.leps[0]
     event.l1 = event.leps[1]
+#    event.l2 = event.leps[2]
 
     # Add extra vectors
     for p in [ event.l0, event.l1]:
@@ -257,19 +264,56 @@ def makeLeps( event, sample, level ):
     if level == 'reco': from TTXPheno.Tools.objectSelection  import isGoodRecoLepton    as isGoodLepton
     else:               from TTXPheno.Tools.objectSelection  import isGoodGenLepton     as isGoodLepton
 
-    # We may loose some events by cross-cleaning or by thresholds.
-    event.found1lep    = isGoodLepton( event.l0 )
-    event.found2lep    = isGoodLepton( event.l1) and len(event.leps) == 2
-    event.oppositeSign = event.l0['pdgId']*event.l1['pdgId'] < 0
-    event.sameFlavor   = abs(event.l0['pdgId']) == abs(event.l1['pdgId'])
+    # We may loose some events by cross-cleaning or by thresholds
+    event.foundLep0    = isGoodLepton( event.l0 )
+    event.foundLep1    = isGoodLepton( event.l1 ) 
+    event.found2Leps   = len(event.leps) == 2
+    event.mll          = (get4DVec(event.l0) + get4DVec(event.l1)).M()
+    
+    if( event.l0['pdgId'] * event.l1['pdgId'] > 0 ):
+        event.sign = 1
+    else:
+        event.sign = -1
+
+    if( event.l0['pdgId'] == -13 and event.l1['pdgId'] == -13 ):    
+        event.index = 0
+    elif( event.l0['pdgId'] == -11 and event.l1['pdgId'] == -11 ):
+        event.index = 2
+    elif( event.l0['pdgId'] == 13 and event.l1['pdgId'] == 13 ):
+        event.index = 3
+    elif( event.l0['pdgId'] == 11 and event.l1['pdgId'] == 11 ):
+        event.index = 5
+    elif( (event.l0['pdgId'] == -11 and event.l1['pdgId'] == -13) or (event.l0['pdgId'] == -13 and event.l1['pdgId'] == -11) ):
+        event.index = 1
+    elif( (event.l0['pdgId'] == 11 and event.l1['pdgId'] == 13) or (event.l0['pdgId'] == 13 and event.l1['pdgId'] == 11) ):
+        event.index = 4
+
+
+#    event.mll          = (get4DVec(event.l0) + get4DVec(event.l1) + get4DVec(event.l2)).M()
+#    event.found3Leps   = len(event.leps) == 3
+#    event.foundLep2    = isGoodLepton( event.l2 )
+    
+#    if( event.l0['pdgId']*event.l1['pdgId'] < 0 and abs(event.l0['pdgId']) == abs(event.l1['pdgId']) and abs((get4DVec(event.l0)+get4DVec(event.l1)).M() - 91.2) < 10 ):
+#        event.OSSF = True
+#    elif( event.l0['pdgId']*event.l2['pdgId'] < 0 and abs(event.l0['pdgId']) == abs(event.l2['pdgId']) and abs((get4DVec(event.l0)+get4DVec(event.l2)).M() - 91.2) < 10 ):
+#        event.OSSF = True
+#    elif( event.l1['pdgId']*event.l2['pdgId'] < 0 and abs(event.l1['pdgId']) == abs(event.l2['pdgId']) and abs((get4DVec(event.l1)+get4DVec(event.l2)).M() - 91.2) < 10):
+#        event.OSSF = True
+#    else:
+#        event.OSSF = False
+
+    #event.sameSign = event.l0['pdgId']*event.l1['pdgId'] > 0
+    #event.oppositeSign = event.l0['pdgId']*event.l1['pdgId'] <0
+    #event.sameFlavor   = abs(event.l0['pdgId']) == abs(event.l1['pdgId'])
 
     # choose your selection on leptons
-    event.passing_leptons = event.found1lep and event.found2lep and event.oppositeSign
+    event.passing_leptons = event.foundLep0 and event.foundLep1 and event.mll > 12 and abs(event.mll-91.2) > 15 and event.found2Leps
+#    event.passing_leptons = event.foundLep0 and event.foundLep1 and event.foundLep2 and event.found3Leps and event.OSSF
+#    event.passing_leptons = event.OSSF
 
 def makeObservables( event, sample, level):
     ''' Compute all relevant observables
     '''
-    # TODO 
     event.passing_checks = event.passing_leptons and event.passing_bjets
 
 sequence = []
@@ -288,17 +332,17 @@ plots = []
 plots.append( Plot(
     name      = 'MET_pt',
     texX      = 'E_{T}^{miss} (GeV)',
-    texY      = 'Number of Events / 25 GeV',
+    texY      = 'Number of Events',
     attribute = lambda event, sample: event.MET['pt'] if event.passing_checks else float('nan'),
-    binning   = [ 24, 0, 600 ],
+    binning   = [ 10, 0, 300 ],
 ))
 
 plots.append( Plot(
     name      = 'l0_pt',
     texX      = 'p_{T}(l_{0}) (GeV)',
-    texY      = 'Number of Events / 25 GeV',
+    texY      = 'Number of Events',
     attribute = lambda event, sample: event.l0['pt'] if event.passing_checks else float('nan'),
-    binning   = [ 12, 0 , 300 ],
+    binning   = [ 20, 0 , 300 ],
 ))
 
 plots.append( Plot(
@@ -306,15 +350,15 @@ plots.append( Plot(
     texX      = '#\eta(l_{0})',
     texY      = 'Number of Events',
     attribute = lambda event, sample: event.l0['eta'] if event.passing_checks else float('nan'),    
-    binning   = [ 20, -3, 3 ],
+    binning   = [ 30, -3, 3 ],
 ))
 
 plots.append( Plot(
     name      = 'l1_pt',
     texX      = 'p_{T}(l_{1}) (GeV)',
-    texY      = 'Number of Events / 25 GeV',
+    texY      = 'Number of Events',
     attribute = lambda event, sample: event.l1['pt'] if event.passing_checks else float('nan'),
-    binning   = [ 12, 0, 300 ],
+    binning   = [ 12, 0, 120 ],
 ))
 
 plots.append( Plot(
@@ -322,15 +366,15 @@ plots.append( Plot(
     texX      = '#\eta(l_{1})',
     texY      = 'Number of Events',
     attribute = lambda event, sample: event.l1['eta'] if event.passing_checks else float('nan'),
-    binning   = [ 20, -3, 3 ],
+    binning   = [ 30, -3, 3 ],
 ))
 
 plots.append( Plot(
     name      = 'jet1_pt',
     texX      = 'p_{T}(leading jet) (GeV)',
-    texY      = 'Number of Events / 25 GeV',
+    texY      = 'Number of Events',
     attribute = lambda event, sample: event.jets[0]['pt'] if event.passing_checks and len(event.jets) > 0 else float('nan'),
-    binning   = [ 24, 0, 600 ],
+    binning   = [ 20, 0, 400 ],
 ))
 
 plots.append( Plot(
@@ -344,9 +388,9 @@ plots.append( Plot(
 plots.append( Plot(
     name      = 'jet2_pt',
     texX      = 'p_{T}(2nd leading jet) (GeV)',
-    texY      = 'Number of Events / 25 GeV',
+    texY      = 'Number of Events',
     attribute = lambda event, sample: event.jets[1]['pt'] if event.passing_checks and len(event.jets) > 1 else float('nan'),
-    binning   = [ 24, 0, 600 ],
+    binning   = [ 20, 0, 400 ],
 ))
 
 plots.append( Plot(
@@ -361,7 +405,7 @@ plots.append( Plot(
     name      = 'njets',
     texX      = 'N_{jets}',
     texY      = 'Number of Events',
-    attribute = lambda event, sample: getattr( event, 'n%sJet'%preTag ),
+    attribute = lambda event, sample: getattr( event, 'n%sJet'%preTag ) if event.passing_checks else float('nan'),
     binning   = [ 10, 0, 10 ],
 ))
 
@@ -369,11 +413,75 @@ plots.append( Plot(
     name      = 'nbjets',
     texX      = 'N_{btags}',
     texY      = 'Number of Events',
-    attribute = lambda event, sample: len(event.bjets),
+    attribute = lambda event, sample: len(event.bjets) if event.passing_checks else float('nan'),
     binning   = [ 4, 0, 4 ],
 ))
 
+plots.append( Plot(
+    name      = 'mll',
+    texX      = 'mll',
+    texY      = 'Number of Events',
+    attribute = lambda event, sample: event.mll if event.passing_checks else float('nan'),
+    binning   = [ 20, 0, 400 ],
+))
+
+plots.append( Plot(
+    name      = 'nLeps',
+    texX      = 'nLeps',
+    texY      = 'Number of Events',
+    attribute = lambda event, sample: len(event.leps) if event.passing_checks else float('nan'),
+    binning   = [ 4, 0, 4 ],
+))
+
+plots.append( Plot(
+    name      = 'sameSign',
+    texX      = 'nLeps_{sameSign}',
+    texY      = 'Number of Events',
+    attribute = lambda event, sample: event.sign if event.passing_checks else float('nan'),
+    binning   = [ 4, -2, 2 ],
+))
+
+plots.append( Plot(
+    name      = 'ht',
+    texX      = 'ht',
+    texY      = 'Number of Events',
+    attribute = lambda event, sample: event.ht if event.passing_checks else float('nan'),
+    binning   = [ 20, 0, 1000 ],
+))
+
+plots.append( Plot(
+        name      = 'yield',
+        texX      = 'yield',
+        texY      = 'Number of Events',
+        attribute = lambda event, sample: event.index if event.passing_checks else float('nan'),
+        binning   = [ 6, 0, 6 ],
+))        
+
+# TODO: Flavour Plot 
+
+#yield plot usw....
 plotting.fill(plots, read_variables = read_variables, sequence = sequence, max_events = -1 if args.small else -1)
+
+for plot in plots:
+    if plot.name != "yield": continue
+    for i_h, h in enumerate(plot.histos):
+        for j_hi, hi in enumerate(h):
+            hi.GetXaxis().SetBinLabel( 1, "#mu+#mu+" )
+            hi.GetXaxis().SetBinLabel( 2, "#mu+e+" )
+            hi.GetXaxis().SetBinLabel( 3, "e+e+" )
+            hi.GetXaxis().SetBinLabel( 4, "#mu-#mu-" )
+            hi.GetXaxis().SetBinLabel( 5, "#mu-e-" )
+            hi.GetXaxis().SetBinLabel( 6, "e-e-" )
+
+#plotting.fill(plots, read_variables = read_variables, sequence = sequence, max_events = -1 if args.small else -1)
+
+# add bg to signal for stacked plot
+if len(bgParams) != 0:
+    indexBg = len(params)
+    for plot in plots:
+        for bg_histo in plot.histos[indexBg]:
+            for s, signal_histos in enumerate(plot.histos[:indexBg]):
+                signal_histos[0].Add(bg_histo)
 
 for plot in plots:
     histoIndexSM    = len(params) - 1
@@ -391,37 +499,9 @@ for plot in plots:
                 if i_h == histoIndexSM:
                     hi.SetLineWidth(3)
 
-
 for log in [False, True]:
-    plot_directory_ = os.path.join(plot_directory, '%s'%(args.level), subDirectory, args.selection if args.selection is not None else 'no_selection', 'log' if log else 'lin')
+    plot_directory_ = os.path.join(plot_directory, sample.name, '%s'%(args.level), subDirectory, args.selection if args.selection is not None else 'no_selection', 'log' if log else 'lin')
     
-    # plot the legend
-    l_plot = copy.deepcopy(plots[0])
-    for i_h, h in enumerate(l_plot.histos):
-        for j_hi, hi in enumerate(h):
-            hi.legendText = allParams[i_h][j_hi]['legendText']
-            if i_h == histoIndexBg: 
-                hi.style = styles.fillStyle(allParams[i_h][j_hi]['color'])
-            else:
-                hi.style = styles.lineStyle(allParams[i_h][j_hi]['color'])
-            hi.Scale(0.)
-            hi.GetXaxis().SetTickLength(0.)
-            hi.GetYaxis().SetTickLength(0.)
-            hi.GetXaxis().SetLabelOffset(999.)
-            hi.GetYaxis().SetLabelOffset(999.)
-    l_plot.name = "legend"
-    l_plot.texX = ' '
-    l_plot.texY = ' '
-
-    plotting.draw(l_plot,
-        plot_directory = plot_directory_,
-        ratio = None,
-        logX = False, logY = log, sorting = True,
-        legend = ( (0.17,0.9-0.05*sum(map(len, l_plot.histos))/3,0.9,0.9), 3),
-        drawObjects = drawObjects(),
-        copyIndexPHP = True,
-    )
-
     # plot the plots
     for p, plot in enumerate(plots):
         histoIndexSM    = len(params) - 1
@@ -447,5 +527,6 @@ for log in [False, True]:
             drawObjects = drawObjects(),
             copyIndexPHP = True,
         )
+
 
 
