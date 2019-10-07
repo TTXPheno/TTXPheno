@@ -42,7 +42,7 @@ argParser.add_argument('--version',            action='store',     default='v2',
 argParser.add_argument('--bestFit',            action='store_true', help='Run combine with bestFit scenario (wide r ranges)')
 argParser.add_argument('--removeCardFiles',    action='store_true', help='remove cardfiles after calculation?')
 argParser.add_argument('--selection',          action='store',     default='lepSel3-onZ-njet3p-nbjet1p-Zpt0', help="Specify cut.")
-argParser.add_argument('--small',              action='store_true', help='Run only on a small subset of the data?')
+argParser.add_argument('--small',              action='store_true', default=False, help='Run only on a small subset of the data?')
 argParser.add_argument('--contours',           action='store_true', help='draw 1sigma and 2sigma contour line?')
 argParser.add_argument('--binning',            action='store',     default = [10, 0.0, 0.003], type=float, nargs=3, help = "argument parameters")
 argParser.add_argument('--yRange',             action='store',     default = [0, 6], type=float, nargs=2, help = "argument parameters")
@@ -56,6 +56,7 @@ args = argParser.parse_args()
 
 lumi_scale = 136.6
 nloXSec   = 0.0915/(0.10099) if args.sample == "ttZ" else 831.76 #inclusive NLO xsec
+nloXSec  *= 1000. #FIXME
 
 if "lepSel1" in args.selection:
     from TTXPheno.Analysis.regions import recottZRegionsHepMC1l as regions
@@ -68,9 +69,9 @@ else:
     xRange = [ 0.5 * ( args.binning[2] - args.binning[1] ) ]
 
 # Samples
-from TTXPheno.samples.hepmc_samples  import *
+from TTXPheno.samples.hepmc_samples_22_08  import *
 hepSample = ttbarZ if args.sample == "ttZ" else ttbar
-hepSample.root_samples_dict = { name:sample for name, sample in hepSample.root_samples_dict.iteritems() if args.pdf in name or name == "PP"}
+hepSample.root_samples_dict = { name:sample for name, sample in hepSample.root_samples_dict.iteritems() if name.startswith(args.pdf+"_") or name == "PP"}
 
 sample_directory = hepSample.name
 if args.small:     sample_directory += "_small"
@@ -105,6 +106,7 @@ if not os.path.isfile('dat/' + filename) or args.overwrite:
         tZqSample       = getattr( loadedSamples, "fwlite_tZq_LO_order2_15weights_CMS" )
         ttWSample       = getattr( loadedSamples, "fwlite_ttW_LO_order3_8weights" )
         ttgammaSample   = getattr( loadedSamples, "fwlite_ttgamma_bg_LO_order2_15weights_CMS" )
+#        WJetsSample     = getattr( loadedSamples, "fwlite_WJetsToLNu_order2_15weights_CMS" )
 
         if args.sample == "ttZ":
             bg = [\
@@ -127,6 +129,7 @@ if not os.path.isfile('dat/' + filename) or args.overwrite:
                   tZqSample,
                   tWZSample,
                   tWSample,
+                  #WJetsSample,
             ]
 
         signalPP = hepSample.root_samples_dict['PP']
@@ -143,7 +146,7 @@ if not os.path.isfile('dat/' + filename) or args.overwrite:
         for sample in signal + bg:
             sample.setWeightString( 'lumiweight1fb*%f'%lumi_scale )
             sample.setSelectionString( selectionString )
-            if sample.name == tWSample.name: sample.addWeightString("2.") #xsec correction t and tbar
+#            if sample.name == tWSample.name: sample.addWeightString("2.") #xsec correction t and tbar
         # somehow has to be separate from the next loop
         if args.small:
             for sample in signal + bg:
@@ -347,9 +350,11 @@ polString = "[0]*x**2+[1]*x**3+[2]*x**4+[3]*x**5+[4]*x**6+[5]*x**7+[6]*x**8"
 # get TGraph from results data list
 xhist = toGraph( "f", "f", results )
 func  = ROOT.TF1("func",polString,args.binning[1], args.binning[2] ) 
+func.SetNpx(10000)
 xhist.Fit(func,"NO")
 x68max = func.GetX( 0.989, args.binning[1], args.binning[2] )
 x95max = func.GetX( 3.84, args.binning[1], args.binning[2] )
+xmax   = func.GetX( args.yRange[1], args.binning[1], args.binning[2] )
 
 xhist.SetLineWidth(0)
 
@@ -357,7 +362,6 @@ func.SetFillColor(ROOT.kWhite)
 func.SetFillStyle(1001)
 func.SetLineWidth(3)
 func.SetLineColor(ROOT.kBlack)
-func.SetNpx(1000)
 
 print '68', x68max
 print '95', x95max
@@ -394,6 +398,7 @@ if not None in args.yRange:
     func68.GetXaxis().SetRangeUser( args.binning[1], args.binning[2] )
     func95.GetYaxis().SetRangeUser( args.yRange[0], args.yRange[1] )
     func95.GetXaxis().SetRangeUser( args.binning[1], args.binning[2] )
+    xhist.GetXaxis().SetRangeUser( 0, xmax )
 
 xhist.Draw("ALO")
 func.Draw("COSAME")

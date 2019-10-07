@@ -31,7 +31,7 @@ argParser.add_argument('--selection',          action='store',      default='all
 argParser.add_argument('--version',            action='store',      default='v0')
 argParser.add_argument('--sample',             action='store',      default='tt', choices = ["tt", "ttZ"])
 argParser.add_argument('--pdf',                action='store',      default='1d0')
-argParser.add_argument('--small',              action='store_true',                                                                                  help='Run only on a small subset of the data?', )
+argParser.add_argument('--small',              action='store_true', default=False,                                                                   help='Run only on a small subset of the data?', )
 argParser.add_argument('--normalize',          action='store_true', default=False,                                                                   help="Normalize yields" )
 argParser.add_argument('--c',                  action='store',      default=0.1, type=float,                                                         help="BSM fraction" )
 args = argParser.parse_args()
@@ -43,10 +43,10 @@ logger    = logger.get_logger(   args.logLevel, logFile = None)
 logger_rt = logger_rt.get_logger(args.logLevel, logFile = None)
 
 # Samples
-from TTXPheno.samples.hepmc_samples      import *
+from TTXPheno.samples.hepmc_samples_22_08      import *
 hepSample = ttbarZ if args.sample == "ttZ" else ttbar
 nloXSec   = 0.0915/(0.10099) if args.sample == "ttZ" else 831.76 #inclusive NLO xsec
-hepSample.root_samples_dict = { name:sample for name, sample in hepSample.root_samples_dict.iteritems() if args.pdf in name or name == "PP"}
+hepSample.root_samples_dict = { name:sample for name, sample in hepSample.root_samples_dict.iteritems() if name.startswith(args.pdf+"_") or name == "PP"}
 
 sample_directory = hepSample.name
 if args.small:     sample_directory += "_small"
@@ -63,6 +63,7 @@ def drawObjects( lumi_scale ):
     ]
     return [tex.DrawLatex(*l) for l in lines] 
 
+addFac = 1#000. #FIXME
 if args.normalize:
     scaling = { i:0 for i in xrange(len(hepSample.root_samples_dict)) }
 else:
@@ -71,10 +72,10 @@ else:
               (1-args.c)*args.c*hepSample.samples_dict[args.pdf+'_HG'].xSection + \
               args.c**2*hepSample.samples_dict[args.pdf+'_HH'].xSection
 
-    hepSample.root_samples_dict['PP'].weight =           lambda event, sample: nloXSec*(1-args.c)**2/sigmaC
-    hepSample.root_samples_dict[args.pdf+'_GH'].weight = lambda event, sample: nloXSec*args.c*(1-args.c)/sigmaC
-    hepSample.root_samples_dict[args.pdf+'_HG'].weight = lambda event, sample: nloXSec*args.c*(1-args.c)/sigmaC
-    hepSample.root_samples_dict[args.pdf+'_HH'].weight = lambda event, sample: nloXSec*(args.c)**2/sigmaC
+    hepSample.root_samples_dict['PP'].weight =           lambda event, sample: addFac*nloXSec*(1-args.c)**2/sigmaC
+    hepSample.root_samples_dict[args.pdf+'_GH'].weight = lambda event, sample: addFac*nloXSec*args.c*(1-args.c)/sigmaC
+    hepSample.root_samples_dict[args.pdf+'_HG'].weight = lambda event, sample: addFac*nloXSec*args.c*(1-args.c)/sigmaC
+    hepSample.root_samples_dict[args.pdf+'_HH'].weight = lambda event, sample: addFac*nloXSec*(args.c)**2/sigmaC
 
 
 # Plotting
@@ -82,8 +83,11 @@ def drawPlots( plots, mode ):
 
     # add signal histos to total histo
     for plot in plots:
-        for hep_histo in plot.histos[1:-3]:
-            plot.histos[-3][0].Add(hep_histo[0])
+#        for hep_histo in plot.histos[1:-3]:
+#            plot.histos[-3][0].Add(hep_histo[0])
+        plot.histos[4][0].Add(plot.histos[1][0]) #HG
+        plot.histos[4][0].Add(plot.histos[2][0]) #GH
+        plot.histos[4][0].Add(plot.histos[3][0]) #HH
 
     # add bg histos to all
     for plot in plots:
@@ -235,9 +239,10 @@ tWSample        = getattr( loadedSamples, "fwlite_tW_LO_order2_15weights_CMS" )
 tZqSample       = getattr( loadedSamples, "fwlite_tZq_LO_order2_15weights_CMS" )
 ttWSample       = getattr( loadedSamples, "fwlite_ttW_LO_order3_8weights" )
 ttgammaSample   = getattr( loadedSamples, "fwlite_ttgamma_bg_LO_order2_15weights_CMS" )
+#WJetsSample     = getattr( loadedSamples, "fwlite_WJetsToLNu_order2_15weights_CMS" )
 
 # cross section correction t and tbar
-tWSample.weight = lambda event, sample: 2.
+#tWSample.weight = lambda event, sample: 2.
 
 if args.sample == "ttZ":
     mc = [\
@@ -260,6 +265,7 @@ else:
           tZqSample,
           tWZSample,
           tWSample,
+          #WJetsSample,
     ]
 
 #colors
@@ -283,7 +289,7 @@ for name, sample in hepSample.root_samples_dict.iteritems():
         sample.texName = name
         stackList.insert( 0, [sample] )
     else:
-        sample.texName = "%s (%s)" %(name.split("_")[1], name.split("_")[0].replace("d","."))
+        sample.texName = "%s (%s)" %(name.split("_")[1], name.split("_")[0].split("-")[1].replace("d","."))
         sample.style   = styles.lineStyle( colors[name.split("_")[1]], width=2, dashed=True  )
         stackList.append( [sample] )
 #    totalSignal.append(sample)
@@ -339,10 +345,16 @@ def getPlots():
       binning=[10,-3,3],
     ) )
     
-    plotList.append( Plot( name = "dl_mass",
+    plotList.append( Plot( name = "dl_mass_onZ",
       texX = 'm(ll) [GeV]', texY = "Number of Events",
       attribute = lambda event, sample: event.recoZ_mass,
       binning=[20,70,110],
+    ) )
+    
+    plotList.append( Plot( name = "dl_mass",
+      texX = 'm(ll) [GeV]', texY = "Number of Events",
+      attribute = lambda event, sample: event.recoZ_mass,
+      binning=[30,5,305],
     ) )
     
     plotList.append( Plot( name = 'dl_dPhi_coarse',
@@ -361,6 +373,18 @@ def getPlots():
       texX = '#DeltaR(ll)', texY = "Number of Events",
       attribute = lambda event, sample: event.recoZ_lldR,
       binning=[10,0,5],
+    ) )
+
+    plotList.append( Plot( name = 'dl_dPhi_det',
+      texX = '#Delta#phi(ll)', texY = "Number of Events",
+      attribute = lambda event, sample: event.recoZ_lldPhi,
+      binning=[40,0,pi],
+    ) )
+
+    plotList.append( Plot( name = 'dl_dR_det',
+      texX = '#DeltaR(ll)', texY = "Number of Events",
+      attribute = lambda event, sample: event.recoZ_lldR,
+      binning=[40,0,5],
     ) )
 
     plotList.append( Plot( name = 'dl_cosThetaStar',
@@ -456,7 +480,7 @@ def getPlots():
     plotList.append( Plot( name = 'l0_pt',
       texX = 'p_{T}(lead lep) [GeV]', texY = "Number of Events",
       attribute = lambda event, sample: event.recoLep_pt[0],
-      binning=[20,0,300],
+      binning=[20,0,200],
     ) )
     
     plotList.append( Plot( name = 'l0_phi',
