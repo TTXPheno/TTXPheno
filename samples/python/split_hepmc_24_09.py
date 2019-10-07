@@ -117,6 +117,6 @@ if __name__ == '__main__':
 
     overwrite = False
 
-    for dir in [ "/afs/hephy.at/data/cms06/TTXPheno/HEPMC/13_09/ttbar/", "/afs/hephy.at/data/cms06/TTXPheno/HEPMC/13_09/ttbarZ/" ]:
+    for dir in [ "/afs/hephy.at/data/cms01/TTXPheno/HEPMC/24_09/ttbar/", "/afs/hephy.at/data/cms01/TTXPheno/HEPMC/24_09/ttbarZ/" ]:
         for subdir in os.listdir( dir ):
             process_directory( os.path.join( dir, subdir ), args.maxEvents, overwrite=overwrite)

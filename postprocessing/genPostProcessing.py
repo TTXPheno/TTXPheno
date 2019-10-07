@@ -59,7 +59,7 @@ if len(args.inputFiles)>0:
     sample = FWLiteSample( args.targetSampleName, args.inputFiles)
 else:
     if args.HEPMC:
-        sample_file = "$CMSSW_BASE/python/TTXPheno/samples/hepmc_samples_13_09.py"
+        sample_file = "$CMSSW_BASE/python/TTXPheno/samples/hepmc_samples_24_09.py"
         samples = imp.load_source( "samples", os.path.expandvars( sample_file ) )
         sample = getattr( samples, args.sample )[args.HEPMC]
     else:
@@ -743,7 +743,7 @@ def filler( event ):
         for recoLep in allRecoLeps:
             recoLep['genMatched'] = any( deltaR( recoLep, genLep )<0.1 for genLep in delphesGenLeptons )
             
-            print recoLep['genMatched'], [deltaR( recoLep, genLep ) for genLep in delphesGenLeptons], recoLep
+            #print recoLep['genMatched'], [deltaR( recoLep, genLep ) for genLep in delphesGenLeptons], recoLep
 
         # Photons
         recoPhotons = filter( isGoodRecoPhoton, delphesReader.photons() )
