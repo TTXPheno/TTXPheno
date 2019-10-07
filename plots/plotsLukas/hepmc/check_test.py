@@ -97,18 +97,18 @@ def drawPlots( plots, mode ):
             for signal_histos in plot.histos[:-1]:
                 signal_histos[0].Add(bg_histo)
 
-    for plot in plots:
-        for i_h, h in enumerate(plot.histos):
-            for j_hi, hi in enumerate(h):
-                if i_h == len(plot.histos)-1 or i_h == len(plot.histos)-2:
-                    # fill style for bg
-                    hi.style = styles.lineStyle(bgcolors[j_hi])
-                elif i_h == len(plot.histos)-3:
-                    # fill style for signal PP
-                    hi.style = styles.lineStyle( ROOT.kBlack, width=3  )
-                else:
-                    # fill style for signal Higgs
-                    hi.style = styles.lineStyle( colors.values()[i_h-2], width=2, dashed=True  )
+#    for plot in plots:
+#        for i_h, h in enumerate(plot.histos):
+#            for j_hi, hi in enumerate(h):
+#                if i_h == len(plot.histos)-1 or i_h == len(plot.histos)-2:
+#                    # fill style for bg
+#                    hi.style = styles.fillStyle(bgcolors[j_hi])
+#                elif i_h == len(plot.histos)-3:
+#                    # fill style for signal PP
+#                    hi.style = styles.lineStyle( ROOT.kBlack, width=3  )
+#                else:
+#                    # fill style for signal Higgs
+#                    hi.style = styles.lineStyle( colors.values()[i_h-2], width=2, dashed=True  )
 
     for log in [False, True]:
         plot_directory_ = os.path.join( plot_directory, 'hepmc/checks_%s'%args.version, sample_directory, args.selection, args.pdf, "c%s"%str(args.c).replace(".","p"),"log" if log else "lin" )
@@ -231,7 +231,7 @@ sample_file     = "$CMSSW_BASE/python/TTXPheno/samples/benchmarks.py"
 loadedSamples   = imp.load_source( "samples", os.path.expandvars( sample_file ) )
 
 ttZSample       = getattr( loadedSamples, "fwlite_ttZ_ll_LO_order3_8weights" )
-ttSample        = getattr( loadedSamples, "fwlite_tt_full_LO_order2_15weights_comp_CMS" )
+ttSample        = getattr( loadedSamples, "fwlite_tt_full_LO_order2_15weights_CMS" )
 WZSample        = getattr( loadedSamples, "fwlite_WZ_lep_LO_order2_15weights_CMS" )
 ZGammaSample    = getattr( loadedSamples, "fwlite_Zgamma_LO_order2_15weights_CMS" )
 tWZSample       = getattr( loadedSamples, "fwlite_tWZ_LO_order2_15weights_CMS" )
@@ -257,28 +257,23 @@ if args.sample == "ttZ":
     ]
 else:
     mc = [\
-#          WZSample,
-#          ZGammaSample,
-#          ttZSample,
-#          ttWSample,
+          WZSample,
+          ZGammaSample,
+          ttZSample,
+          ttWSample,
 #          ttgammaSample,
+          tZqSample,
+          tWZSample,
+          tWSample,
 #          WJetsSample,
-#          tZqSample,
-#          tWZSample,
-#          tWSample,
     ]
 
 #colors
 colors = {'PP':ROOT.kGreen+2, 'HH':ROOT.kOrange+10, 'HG':ROOT.kViolet+6, 'GH':ROOT.kBlue+2, 'ttZ':ROOT.kGray}
 bgcolors = [ ROOT.kRed+1, ROOT.kGreen+2, ROOT.kOrange+1, ROOT.kViolet+9, ROOT.kSpring-7, ROOT.kRed+2,  ROOT.kPink-9, ROOT.kBlue,  ROOT.kRed-7, ROOT.kRed-10, ROOT.kRed+3,  ROOT.kGreen-7, ROOT.kGreen-10 ]
 
-<<<<<<< HEAD
 for i, s in enumerate(mc + [ttZSample,ttSample]):
     s.style = styles.fillStyle( bgcolors[i] )
-=======
-for i, s in enumerate(mc):
-    s.styles = styles.lineStyle( bgcolors[i] )
->>>>>>> aa79da234b78267ae8a922a3755ce70ea7ea9469
 
 lumi_scale = 136.6
 stackList = [ ]
@@ -301,35 +296,19 @@ for name, sample in hepSample.root_samples_dict.iteritems():
 #    totalSignal.append(sample)
 #stackList.append( totalSignal )
 
-<<<<<<< HEAD
 stackList += [ [totSample] ]
 stackList += [ mc ]
-=======
-#stackList += [ [totSample] ]
-stackList += [ [ttZSample if args.sample == "ttZ" else ttSample] ]
-stackList += [ [totSample] ]
-#stackList += [ mc ]
->>>>>>> aa79da234b78267ae8a922a3755ce70ea7ea9469
 stack = Stack( *stackList )
 
 #for sample in stack.samples:
 #    print sample.name, sample.weightString
 eventScale = 1.
 if args.small:
-<<<<<<< HEAD
     for sample in stack.samples:
         sample.normalization=1.
         sample.reduceFiles( factor=10 )
         eventScale = 1./sample.normalization
 #        sample.addWeightString(eventScale)
-=======
-    ttSample.reduceFiles( factor = 10 )
-    #for sample in stack.samples:
-    #    sample.normalization=1.
-    #    sample.reduceFiles( factor=10 )
-    #    #eventScale = 1./sample.normalization
-    #    #sample.addWeightString(eventScale)
->>>>>>> aa79da234b78267ae8a922a3755ce70ea7ea9469
 
 weight_ = lambda event, sample: lumi_scale * event.lumiweight1fb
 

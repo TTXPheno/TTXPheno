@@ -34,6 +34,10 @@ test.reweight_pkl = '/afs/hephy.at/data/llechner01/TTXPheno/gridpacks/07052018/t
 test.nEvents = 10
 test.xsec = 200
 
+#fwlite_tWW1j_LO_order4_5weights                              =
+#fwlite_tWW1j_LO_order4_5weights.reweight_pkl                 =
+#fwlite_tWW1j_LO_order4_5weights.nEvents                      =
+#fwlite_tWW1j_LO_order4_5weights.xsec                         =
 
 ## ttgamma reference point samples 15/2 CMS GEN-SIM -> doesn't exist
 #MiniAOD_fwlite_ttgamma_LO_order2_15weights_ref              = FWLiteSample.fromDirectory("MiniAOD_fwlite_ttgamma_LO_order2_15weights_ref", "/afs/hephy.at/user/l/llechner/public/CMSSW_9_4_4/src/CMSTopEFT/setup_scripts/ttgamma2l/")

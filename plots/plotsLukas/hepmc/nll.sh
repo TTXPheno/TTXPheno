@@ -45,21 +45,3 @@ python nll.py --version v8 --pdf pdf-45   --sample tt --selection lepSel2-offZ-n
 python nll.py --version v8 --pdf pdf-50   --sample tt --selection lepSel2-offZ-njet2p-nbjet1p --binning 10 0 0.02
 python nll.py --version v8 --pdf pdf-75   --sample tt --selection lepSel2-offZ-njet2p-nbjet1p --binning 10 0 0.02
 python nll.py --version v8 --pdf pdf-100  --sample tt --selection lepSel2-offZ-njet2p-nbjet1p --binning 10 0 0.03
-
-#base
-#pdf-0.01
-#pdf-0.1
-#pdf-1
-#pdf-10
-#pdf-30
-#pdf-35
-#pdf-37
-#pdf-40
-#pdf-42
-#pdf-43
-#pdf-44
-#pdf-45
-#pdf-50
-#pdf-75
-#pdf-100
-

@@ -63,6 +63,11 @@ class DelphesReader( DelphesReaderBase ): # version RootTools reader
                 ('EhadOverEem','ehadOverEem') 
             ])
 
+    def genJets( self ):
+        return self.read_collection( 'GenJet', 
+            [   ('PT', 'pt'), ( 'Eta', 'eta'), ('Phi', 'phi'),
+            ])
+
     def met( self ):
         return self.read_collection( 'PuppiMissingET', [('MET', 'pt'), ('Phi', 'phi')] )
 

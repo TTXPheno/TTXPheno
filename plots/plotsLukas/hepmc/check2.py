@@ -34,6 +34,7 @@ argParser.add_argument('--pdf',                action='store',      default='1d0
 argParser.add_argument('--small',              action='store_true', default=False,                                                                   help='Run only on a small subset of the data?', )
 argParser.add_argument('--normalize',          action='store_true', default=False,                                                                   help="Normalize yields" )
 argParser.add_argument('--c',                  action='store',      default=0.1, type=float,                                                         help="BSM fraction" )
+argParser.add_argument('--mode',               action='store',      default="all", type=str,                                                         help="lepton mode" )
 args = argParser.parse_args()
 
 # Logger
@@ -44,10 +45,14 @@ logger_rt = logger_rt.get_logger(args.logLevel, logFile = None)
 
 # Samples
 from TTXPheno.samples.hepmc_samples_24_09      import *
-hepSample = ttbarZ if args.sample == "ttZ" else ttbar
+hepSample = ttbarZ if args.sample == "ttZ" else ttbar#_phase2
+#tt_hepSample = ttbar
 nloXSec   = 0.0915/(0.10099) if args.sample == "ttZ" else 831.76 #inclusive NLO xsec
 
 hepSample.root_samples_dict = { name:sample for name, sample in hepSample.root_samples_dict.iteritems() if name.startswith(args.pdf+"_") or name == "PP"}
+#hepSample.root_samples_dict = { name:sample for name, sample in hepSample.root_samples_dict.iteritems() if name == "PP"}
+#hepSample.root_samples_dict.update( { name:sample for name, sample in tt_hepSample.root_samples_dict.iteritems() if name.startswith(args.pdf+"_") } )
+#hepSample.samples_dict.update( { name:sample for name, sample in tt_hepSample.samples_dict.iteritems() if name.startswith(args.pdf+"_") } )
 
 sample_directory = hepSample.name
 if args.small:     sample_directory += "_small"
@@ -67,7 +72,7 @@ def drawObjects( lumi_scale ):
 
 addFac = 1#000. #FIXME
 if args.normalize:
-    scaling = { i:0 for i in xrange(len(hepSample.root_samples_dict)) }
+    scaling = { i:0 for i in xrange(len(hepSample.root_samples_dict.keys()+1)) }
 else:
     sigmaC  = (1-args.c)**2*hepSample.samples_dict['PP'].xSection + \
               (1-args.c)*args.c*hepSample.samples_dict[args.pdf+'_GH'].xSection + \
@@ -84,34 +89,34 @@ else:
 def drawPlots( plots, mode ):
 
     # add signal histos to total histo
-    for plot in plots:
+#    for plot in plots:
 #        for hep_histo in plot.histos[1:-3]:
 #            plot.histos[-2][0].Add(hep_histo[0])
-        plot.histos[5][0].Add(plot.histos[2][0]) #HG
-        plot.histos[5][0].Add(plot.histos[3][0]) #GH
-        plot.histos[5][0].Add(plot.histos[4][0]) #HH
+#        plot.histos[5][0].Add(plot.histos[2][0]) #HG
+#        plot.histos[5][0].Add(plot.histos[3][0]) #GH
+#        plot.histos[5][0].Add(plot.histos[4][0]) #HH
 
     # add bg histos to all
-    for plot in plots:
-        for bg_histo in plot.histos[-1]:
-            for signal_histos in plot.histos[:-1]:
-                signal_histos[0].Add(bg_histo)
+#    for plot in plots:
+#        for bg_histo in plot.histos[-1]:
+#            for signal_histos in plot.histos[:-1]:
+#                signal_histos[0].Add(bg_histo)
 
-    for plot in plots:
-        for i_h, h in enumerate(plot.histos):
-            for j_hi, hi in enumerate(h):
-                if i_h == len(plot.histos)-1 or i_h == len(plot.histos)-2:
-                    # fill style for bg
-                    hi.style = styles.lineStyle(bgcolors[j_hi])
-                elif i_h == len(plot.histos)-3:
-                    # fill style for signal PP
-                    hi.style = styles.lineStyle( ROOT.kBlack, width=3  )
-                else:
-                    # fill style for signal Higgs
-                    hi.style = styles.lineStyle( colors.values()[i_h-2], width=2, dashed=True  )
+#    for plot in plots:
+#        for i_h, h in enumerate(plot.histos):
+#            for j_hi, hi in enumerate(h):
+#                if i_h == len(plot.histos)-1 or i_h == len(plot.histos)-2:
+#                    # fill style for bg
+#                    hi.style = styles.fillStyle(bgcolors[j_hi])
+#                elif i_h == len(plot.histos)-3:
+#                    # fill style for signal PP
+#                    hi.style = styles.lineStyle( ROOT.kBlack, width=3  )
+#                else:
+#                    # fill style for signal Higgs
+#                    hi.style = styles.lineStyle( colors.values()[i_h-2], width=2, dashed=True  )
 
     for log in [False, True]:
-        plot_directory_ = os.path.join( plot_directory, 'hepmc/checks_%s'%args.version, sample_directory, args.selection, args.pdf, "c%s"%str(args.c).replace(".","p"),"log" if log else "lin" )
+        plot_directory_ = os.path.join( plot_directory, 'hepmc/checks_%s'%args.version, sample_directory, args.selection, args.pdf, "c%s"%str(args.c).replace(".","p"), mode, "log" if log else "lin" )
 
         for plot in plots:
             if not max(l[0].GetMaximum() for l in plot.histos): 
@@ -257,28 +262,23 @@ if args.sample == "ttZ":
     ]
 else:
     mc = [\
-#          WZSample,
-#          ZGammaSample,
-#          ttZSample,
-#          ttWSample,
+          WZSample,
+          ZGammaSample,
+          ttZSample,
+          ttWSample,
 #          ttgammaSample,
+          tZqSample,
+          tWZSample,
+          tWSample,
 #          WJetsSample,
-#          tZqSample,
-#          tWZSample,
-#          tWSample,
     ]
 
 #colors
 colors = {'PP':ROOT.kGreen+2, 'HH':ROOT.kOrange+10, 'HG':ROOT.kViolet+6, 'GH':ROOT.kBlue+2, 'ttZ':ROOT.kGray}
 bgcolors = [ ROOT.kRed+1, ROOT.kGreen+2, ROOT.kOrange+1, ROOT.kViolet+9, ROOT.kSpring-7, ROOT.kRed+2,  ROOT.kPink-9, ROOT.kBlue,  ROOT.kRed-7, ROOT.kRed-10, ROOT.kRed+3,  ROOT.kGreen-7, ROOT.kGreen-10 ]
 
-<<<<<<< HEAD
 for i, s in enumerate(mc + [ttZSample,ttSample]):
     s.style = styles.fillStyle( bgcolors[i] )
-=======
-for i, s in enumerate(mc):
-    s.styles = styles.lineStyle( bgcolors[i] )
->>>>>>> aa79da234b78267ae8a922a3755ce70ea7ea9469
 
 lumi_scale = 136.6
 stackList = [ ]
@@ -297,39 +297,23 @@ for name, sample in hepSample.root_samples_dict.iteritems():
     else:
         sample.texName = "%s (%s)" %(name.split("_")[1], name.split("_")[0].split("-")[1].replace("d","."))
         sample.style   = styles.lineStyle( colors[name.split("_")[1]], width=2, dashed=True  )
-        stackList.append( [sample] )
-#    totalSignal.append(sample)
-#stackList.append( totalSignal )
+#        stackList.append( [sample] )
+    totalSignal.append(sample)
+stackList.append( totalSignal )
 
-<<<<<<< HEAD
-stackList += [ [totSample] ]
-stackList += [ mc ]
-=======
 #stackList += [ [totSample] ]
-stackList += [ [ttZSample if args.sample == "ttZ" else ttSample] ]
-stackList += [ [totSample] ]
 #stackList += [ mc ]
->>>>>>> aa79da234b78267ae8a922a3755ce70ea7ea9469
 stack = Stack( *stackList )
 
 #for sample in stack.samples:
 #    print sample.name, sample.weightString
 eventScale = 1.
-if args.small:
-<<<<<<< HEAD
-    for sample in stack.samples:
-        sample.normalization=1.
-        sample.reduceFiles( factor=10 )
-        eventScale = 1./sample.normalization
+#if args.small:
+#    for sample in stack.samples:
+#        sample.normalization=1.
+#        sample.reduceFiles( factor=1 )
+#        eventScale = 1./sample.normalization
 #        sample.addWeightString(eventScale)
-=======
-    ttSample.reduceFiles( factor = 10 )
-    #for sample in stack.samples:
-    #    sample.normalization=1.
-    #    sample.reduceFiles( factor=10 )
-    #    #eventScale = 1./sample.normalization
-    #    #sample.addWeightString(eventScale)
->>>>>>> aa79da234b78267ae8a922a3755ce70ea7ea9469
 
 weight_ = lambda event, sample: lumi_scale * event.lumiweight1fb
 
@@ -375,16 +359,16 @@ def getPlots():
       binning=[10,0,pi],
     ) )
 
-    plotList.append( Plot( name = 'dl_dPhi_det',
-      texX = '#Delta#phi(ll)', texY = "Number of Events",
-      attribute = lambda event, sample: event.recoZ_lldPhi,
-      binning=[40,0,pi],
-    ) )
-
     plotList.append( Plot( name = 'dl_dR',
       texX = '#DeltaR(ll)', texY = "Number of Events",
       attribute = lambda event, sample: event.recoZ_lldR,
       binning=[10,0,5],
+    ) )
+
+    plotList.append( Plot( name = 'dl_dPhi_det',
+      texX = '#Delta#phi(ll)', texY = "Number of Events",
+      attribute = lambda event, sample: event.recoZ_lldPhi,
+      binning=[40,0,pi],
     ) )
 
     plotList.append( Plot( name = 'dl_dR_det',
@@ -549,8 +533,8 @@ plots = getPlots()
 
 # Loop over channels
 allPlots = {}
-#allModes = [ 'all', 'mumumu', 'mumue', 'muee', 'eee' ]
-allModes = [ 'all' ]
+#allModes = [ 'mumu', 'mue', 'ee', 'all' ]
+allModes = [ args.mode ]
 
 for index, mode in enumerate( allModes ):
     logger.info( "Computing plots for mode %s", mode )

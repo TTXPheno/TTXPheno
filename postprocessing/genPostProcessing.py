@@ -36,7 +36,7 @@ argParser.add_argument('--HEPMC',              action='store',      nargs='?', d
 argParser.add_argument('--targetDir',          action='store',      default='v5')
 argParser.add_argument('--sample',             action='store',      default='fwlite_ttZ_ll_LO_scan', help="Name of the sample loaded from fwlite_benchmarks. Only if no inputFiles are specified")
 argParser.add_argument('--inputFiles',         action='store',      nargs = '*', default=[])
-argParser.add_argument('--delphesEra',         action='store',      default='delphes_card_CMS', choices = ["RunII", "PhaseII"], help="specify delphes era")
+argParser.add_argument('--delphesEra',         action='store',      default='delphes_card_CMS', choices = ["RunII", "RunIICentral", "RunIInoDelphesIso", "RunIIPileUp", "PhaseII"], help="specify delphes era")
 argParser.add_argument('--targetSampleName',   action='store',      default=None, help="Name of the sample in case inputFile are specified. Otherwise ignored")
 argParser.add_argument('--nJobs',              action='store',      nargs='?', type=int, default=1,  help="Maximum number of simultaneous jobs.")
 argParser.add_argument('--job',                action='store',      nargs='?', type=int, default=0,  help="Run only job i")
@@ -59,7 +59,7 @@ if len(args.inputFiles)>0:
     sample = FWLiteSample( args.targetSampleName, args.inputFiles)
 else:
     if args.HEPMC:
-        sample_file = "$CMSSW_BASE/python/TTXPheno/samples/hepmc_samples_22_08.py"
+        sample_file = "$CMSSW_BASE/python/TTXPheno/samples/hepmc_samples_24_09.py"
         samples = imp.load_source( "samples", os.path.expandvars( sample_file ) )
         sample = getattr( samples, args.sample )[args.HEPMC]
     else:
@@ -204,9 +204,9 @@ if args.delphes or args.HEPMC:
     variables     += ["recoZ_l1_index/I", "recoZ_l2_index/I", "recoNonZ_l1_index/I", "recoNonZ_l2_index/I",  "recoZ_pt/F", "recoZ_eta/F", "recoZ_phi/F", "recoZ_mass/F", "recoZ_lldPhi/F", "recoZ_lldR/F", "recoZ_cosThetaStar/F"]
 
     # reconstructed leptons
-    recoLep_vars       = "pt/F,eta/F,phi/F,pdgId/I,isolationVar/F,isolationVarRhoCorr/F,sumPtCharged/F,sumPtNeutral/F,sumPtChargedPU/F,sumPt/F,ehadOverEem/F"
+    recoLep_vars       = "pt/F,eta/F,phi/F,pdgId/I,isolationVar/F,isolationVarRhoCorr/F,sumPtCharged/F,sumPtNeutral/F,sumPtChargedPU/F,sumPt/F,ehadOverEem/F,genMatched/I"
     variables         += ["recoLep[%s]"%recoLep_vars]
-    recoLep_varnames  = varnames( recoLep_vars )
+    recoLep_varnames  = varnames( recoLep_vars ) 
     # generated jets 
     variables += ["ndelphesGenJet/I", "delphesGenJet[pt/F,eta/F,phi/F]"]
     # reconstructed jets
@@ -273,6 +273,15 @@ if args.delphes:
     if args.delphesEra == 'RunII':
         from TTXPheno.Tools.DelphesReader          import DelphesReader
         delphesCard = 'delphes_card_CMS'
+    elif args.delphesEra == 'RunIICentral':
+        from TTXPheno.Tools.DelphesReader          import DelphesReader
+        delphesCard = 'delphes_card_CMS_Central'
+    elif args.delphesEra == 'RunIInoDelphesIso':
+        from TTXPheno.Tools.DelphesReader          import DelphesReader
+        delphesCard = 'delphes_card_CMS_noLepIso'
+    elif args.delphesEra == 'RunIIPileUp':
+        from TTXPheno.Tools.DelphesReader          import DelphesReader
+        delphesCard = 'delphes_card_CMS_PileUp'
     elif args.delphesEra == 'PhaseII':
         from TTXPheno.Tools.DelphesReaderCMSHLLHC  import DelphesReader
         delphesCard = 'CMS_PhaseII/CMS_PhaseII_200PU_v03'
@@ -728,6 +737,14 @@ def filler( event ):
         allRecoLeps = delphesReader.muons() + delphesReader.electrons()
         allRecoLeps.sort( key = lambda p:-p['pt'] )
         recoLeps =  filter( isGoodRecoLepton, allRecoLeps )
+
+        delphesGenLeptons = filter( lambda p: abs(p['pdgId']) in [11,13] and p['status']==1, delphesReader.genParticles() )
+        # gen-match leptons with delphes particles
+        for recoLep in allRecoLeps:
+            recoLep['genMatched'] = any( deltaR( recoLep, genLep )<0.1 for genLep in delphesGenLeptons )
+            
+            #print recoLep['genMatched'], [deltaR( recoLep, genLep ) for genLep in delphesGenLeptons], recoLep
+
         # Photons
         recoPhotons = filter( isGoodRecoPhoton, delphesReader.photons() )
 
@@ -746,7 +763,10 @@ def filler( event ):
         recoPhotons = list(filter( lambda g: g['minJetDR']>0.4, recoPhotons))
 
         # cross-cleaning of reco-objects
+        nrecoLeps_uncleaned = len( recoLeps )
         recoLeps = filter( lambda l: (min([999]+[deltaR2(l, j) for j in recoJets if j['pt']>30]) > 0.3**2 ), recoLeps )
+        #logger.info( "Before photon cleaning: %i after: %i allRecoLeps: %i, recoLeps %i", nrecoLeps_uncleaned, len(recoLeps), len( allRecoLeps ), len( recoLeps ) )
+
         # give index to leptons
         addIndex( recoLeps )
     

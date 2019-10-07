@@ -38,6 +38,7 @@ gridpack_dir = "/afs/hephy.at/data/llechner01/TTXPheno/gridpacks/"
 
 #gen_dir = "/afs/hephy.at/data/llechner02/TTXPheno/skims/gen/v18/delphes_card_CMS/"
 gen_dir = "/afs/hephy.at/data/rschoefbeck01/TTXPheno/skims/gen/RunII_v01/"
+
 #fwlite_ttgammaLarge_LO_order2_15weights_ref_CMS              = Sample.fromDirectory("fwlite_ttgammaLarge_LO_order2_15weights_ref", texName = "tt#gamma",  directory = [os.path.join( gen_dir, "fwlite_ttgammaLarge_LO_order2_15weights_ref" )])
 #fwlite_ttgammaLarge_LO_order2_15weights_ref_CMS.reweight_pkl = gridpack_dir + "18052018_ref/ttgamma/order2/ttgamma0j_rwgt_slc6_amd64_gcc630_CMSSW_9_3_0_tarball.pkl"
 #fwlite_ttgammaLarge_LO_order2_15weights_ref_CMS.nEvents      = 10000000
@@ -106,6 +107,7 @@ fwlite_tt_full_LO_order2_15weights_comp_CMS               = Sample.fromDirectory
 fwlite_tt_full_LO_order2_15weights_comp_CMS.reweight_pkl  = gridpack_dir + "06072018/tt_semilep/order2/tt_semilep_rwgt_slc6_amd64_gcc630_CMSSW_9_3_0_tarball.pkl"
 fwlite_tt_full_LO_order2_15weights_comp_CMS.nEvents       = 10000000 
 fwlite_tt_full_LO_order2_15weights_comp_CMS.xsec          = 494.9 * 831.76 / 485.8 #tt full gridpack * tt NLO Daniel / tt LO run.py UFO
+
 #check
 
 #fwlite_tt_dilep_LO_order2_15weights_CMS_delphes     = Sample.fromDirectory("fwlite_tt_dilep_LO_order2_15weights_delphes",  texName = "ttdilep",      directory = [os.path.join( gen_dir, "fwlite_tt_dilep_LO_order2_15weights", "delphes" )], treeName = "Delphes") 

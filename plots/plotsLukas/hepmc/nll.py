@@ -69,7 +69,7 @@ else:
     xRange = [ 0.5 * ( args.binning[2] - args.binning[1] ) ]
 
 # Samples
-from TTXPheno.samples.hepmc_samples_22_08  import *
+from TTXPheno.samples.hepmc_samples_24_09  import *
 hepSample = ttbarZ if args.sample == "ttZ" else ttbar
 hepSample.root_samples_dict = { name:sample for name, sample in hepSample.root_samples_dict.iteritems() if name.startswith(args.pdf+"_") or name == "PP"}
 
@@ -308,7 +308,7 @@ if not os.path.isfile('dat/' + filename) or args.overwrite:
     pool.close()
     del pool
 
-    with open('tmp/'+filename, 'w') as f:
+    with open('/tmp/'+filename, 'w') as f:
         for item in [SM]+results:
             f.write( "%s\n" % ','.join( map( str, list(item) ) ) )
 
