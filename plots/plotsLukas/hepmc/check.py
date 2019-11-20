@@ -43,7 +43,7 @@ logger    = logger.get_logger(   args.logLevel, logFile = None)
 logger_rt = logger_rt.get_logger(args.logLevel, logFile = None)
 
 # Samples
-from TTXPheno.samples.hepmc_samples_24_09      import *
+from TTXPheno.samples.hepmc_samples_11_06      import *
 hepSample = ttbarZ if args.sample == "ttZ" else ttbar
 nloXSec   = 0.0915/(0.10099) if args.sample == "ttZ" else 831.76 #inclusive NLO xsec
 
@@ -239,10 +239,11 @@ tWSample        = getattr( loadedSamples, "fwlite_tW_LO_order2_15weights_CMS" )
 tZqSample       = getattr( loadedSamples, "fwlite_tZq_LO_order2_15weights_CMS" )
 ttWSample       = getattr( loadedSamples, "fwlite_ttW_LO_order3_8weights" )
 ttgammaSample   = getattr( loadedSamples, "fwlite_ttgamma_bg_LO_order2_15weights_CMS" )
-#WJetsSample     = getattr( loadedSamples, "fwlite_WJetsToLNu_order2_15weights_CMS" )
+WJetsSample     = getattr( loadedSamples, "fwlite_WJetsToLNu_order2_15weights_CMS" )
 
 # cross section correction (t and tbar) + NLO correction
-#tWSample.weight = lambda event, sample: 2#*35.85/19.55
+WJetsSample.weight = lambda event, sample: .1
+tWSample.weight = lambda event, sample: 2
 
 if args.sample == "ttZ":
     mc = [\
@@ -272,13 +273,8 @@ else:
 colors = {'PP':ROOT.kGreen+2, 'HH':ROOT.kOrange+10, 'HG':ROOT.kViolet+6, 'GH':ROOT.kBlue+2, 'ttZ':ROOT.kGray}
 bgcolors = [ ROOT.kRed+1, ROOT.kGreen+2, ROOT.kOrange+1, ROOT.kViolet+9, ROOT.kSpring-7, ROOT.kRed+2,  ROOT.kPink-9, ROOT.kBlue,  ROOT.kRed-7, ROOT.kRed-10, ROOT.kRed+3,  ROOT.kGreen-7, ROOT.kGreen-10 ]
 
-<<<<<<< HEAD
-for i, s in enumerate(mc + [ttZSample,ttSample]):
-    s.style = styles.fillStyle( bgcolors[i] )
-=======
 for i, s in enumerate(mc):
     s.styles = styles.lineStyle( bgcolors[i] )
->>>>>>> aa79da234b78267ae8a922a3755ce70ea7ea9469
 
 lumi_scale = 136.6
 stackList = [ ]
@@ -301,37 +297,24 @@ for name, sample in hepSample.root_samples_dict.iteritems():
 #    totalSignal.append(sample)
 #stackList.append( totalSignal )
 
-<<<<<<< HEAD
-stackList += [ [totSample] ]
-stackList += [ mc ]
-=======
 #stackList += [ [totSample] ]
 stackList += [ [ttZSample if args.sample == "ttZ" else ttSample] ]
 stackList += [ [totSample] ]
 #stackList += [ mc ]
->>>>>>> aa79da234b78267ae8a922a3755ce70ea7ea9469
 stack = Stack( *stackList )
 
 #for sample in stack.samples:
 #    print sample.name, sample.weightString
 eventScale = 1.
 if args.small:
-<<<<<<< HEAD
-    for sample in stack.samples:
-        sample.normalization=1.
-        sample.reduceFiles( factor=10 )
-        eventScale = 1./sample.normalization
-#        sample.addWeightString(eventScale)
-=======
     ttSample.reduceFiles( factor = 10 )
     #for sample in stack.samples:
     #    sample.normalization=1.
     #    sample.reduceFiles( factor=10 )
     #    #eventScale = 1./sample.normalization
     #    #sample.addWeightString(eventScale)
->>>>>>> aa79da234b78267ae8a922a3755ce70ea7ea9469
 
-weight_ = lambda event, sample: lumi_scale * event.lumiweight1fb
+weight_ = lambda event, sample: lumi_scale * event.lumiweight1fb / 2.5 #correct plots by hand (sorry)
 
 # Use some defaults (set defaults before you create/import list of Plots!!)
 Plot.setDefaults( stack=stack, weight=staticmethod( weight_ ), selectionString=cutInterpreter.cutString( args.selection ) )#, addOverFlowBin='upper' )

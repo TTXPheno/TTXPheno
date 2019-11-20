@@ -42,10 +42,12 @@ logger    = logger.get_logger(   args.logLevel, logFile = None)
 logger_rt = logger_rt.get_logger(args.logLevel, logFile = None)
 
 # Samples
-from TTXPheno.samples.hepmc_samples_24_09      import *
+from TTXPheno.samples.hepmc_samples_11_06      import *
 hepSample = ttbarZ if args.sample == "ttZ" else ttbar
 nloXSec   = 0.0915/(0.10099) if args.sample == "ttZ" else 831.76 #inclusive NLO xsec
 hepSample.root_samples_dict = { name:sample for name, sample in hepSample.root_samples_dict.iteritems() if name.startswith(args.pdf+"_") or name == "PP"}
+print hepSample.root_samples_dict.items()   
+
 
 sample_directory = hepSample.name
 if args.small:     sample_directory += "_small"
@@ -76,6 +78,18 @@ else:
     hepSample.root_samples_dict[args.pdf+'_HG'].weight = lambda event, sample: addFac*nloXSec*args.c*(1-args.c)/sigmaC 
     hepSample.root_samples_dict[args.pdf+'_HH'].weight = lambda event, sample: addFac*nloXSec*args.c**2/sigmaC 
 
+    hepmcweight                                   =           nloXSec/hepSample.samples_dict['PP'].xSection
+#    hepSample.root_samples_dict['PP'].hepmcweight =           nloXSec*(1-args.c)**2/sigmaC
+#    hepSample.root_samples_dict[args.pdf+'_GH'].hepmcweight = nloXSec*args.c*(1-args.c)/sigmaC
+#    hepSample.root_samples_dict[args.pdf+'_HG'].hepmcweight = nloXSec*args.c*(1-args.c)/sigmaC
+#    hepSample.root_samples_dict[args.pdf+'_HH'].hepmcweight = nloXSec*(args.c)**2/sigmaC
+
+# Import samples
+sample_file     = "$CMSSW_BASE/python/TTXPheno/samples/benchmarks.py"
+loadedSamples   = imp.load_source( "samples", os.path.expandvars( sample_file ) )
+
+ttZSample       = getattr( loadedSamples, "fwlite_ttZ_ll_LO_order3_8weights" )
+ttSample        = getattr( loadedSamples, "fwlite_tt_full_LO_order2_15weights_CMS" )
 
 # Plotting
 def drawPlots( plots, mode ):
@@ -213,18 +227,35 @@ sequence = [\
 lumi_scale = 136.6
 comparisonSamples = []
 
+print hepSample.root_samples_dict["PP"].getYieldFromDraw( weightString="lumiweight1fb*%f"%hepmcweight, selectionString=cutInterpreter.cutString( args.selection ) )["val"]
+print hepSample.root_samples_dict[args.pdf+"_GH"].getYieldFromDraw( weightString="lumiweight1fb*%f"%hepmcweight, selectionString=cutInterpreter.cutString( args.selection ) )["val"]
+print hepSample.root_samples_dict[args.pdf+"_HG"].getYieldFromDraw( weightString="lumiweight1fb*%f"%hepmcweight, selectionString=cutInterpreter.cutString( args.selection ) )["val"]
+print hepSample.root_samples_dict[args.pdf+"_HH"].getYieldFromDraw( weightString="lumiweight1fb*%f"%hepmcweight, selectionString=cutInterpreter.cutString( args.selection ) )["val"]
+
+mgSample = ttZSample if args.sample == "ttZ" else ttSample
+mgScale = mgSample.getYieldFromDraw( weightString="lumiweight1fb", selectionString=cutInterpreter.cutString( args.selection ) )["val"]
+#ppScale = hepSample.root_samples_dict["PP"].getYieldFromDraw( weightString="lumiweight1fb*%f"%hepSample.root_samples_dict["PP"].hepmcweight, selectionString=cutInterpreter.cutString( args.selection ) )["val"]
+ppScale = hepSample.root_samples_dict["PP"].getYieldFromDraw( weightString="lumiweight1fb*%f"%hepmcweight, selectionString=cutInterpreter.cutString( args.selection ) )["val"]
+fancyScale = mgScale / ppScale if ppScale else 1.
+
+#mgSample = ttZSample if args.sample == "ttZ" else ttSample
+#fancyScale = mgSample.getYieldFromDraw( weightString="lumiweight1fb", selectionString=cutInterpreter.cutString( args.selection ) )["val"]
+
 # Sample definition
 for name, sample in hepSample.root_samples_dict.iteritems():
 #    sample.weight         = get_reweight( param, sample )
 #    sample.read_variables = read_variables_EFT
 
+#    w = sample.getYieldFromDraw( weightString="lumiweight1fb*%f"%sample.hepmcweight, selectionString=cutInterpreter.cutString( args.selection ) )["val"]
     if name == "PP":
         sample.texName = name
         sample.style   = styles.lineStyle( ROOT.kBlack, width=3  )
+        sample.scale   = fancyScale #/ w if w else None
         comparisonSamples.insert( 0, [sample] )
     else:
         sample.texName = "%s (%s)" %(name.split("_")[1], name.split("_")[0].split("-")[1].replace("d","."))
         sample.style   = styles.lineStyle( colors[name.split("_")[1]], width=2, dashed=True  )
+        sample.scale   = fancyScale #/ w if w else None
         comparisonSamples.append( [sample] )
 
 stack      = Stack( *comparisonSamples )
@@ -237,7 +268,7 @@ if args.small:
         eventScale = 1./sample.normalization
         sample.addWeightString(eventScale)
 
-weight_ = lambda event, sample: event.lumiweight1fb*lumi_scale
+weight_ = lambda event, sample: event.lumiweight1fb*lumi_scale  / 2.5 #correct plots by hand (sorry)
 
 # Use some defaults (set defaults before you create/import list of Plots!!)
 Plot.setDefaults( stack=stack, weight=staticmethod( weight_ ), selectionString=cutInterpreter.cutString( args.selection ) )#, addOverFlowBin='upper' )

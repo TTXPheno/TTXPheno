@@ -10,7 +10,8 @@ import pickle
 from math                               import isnan, ceil, pi
 
 # TTXPheno
-from TTXPheno.Tools.helpers              import getCollection, getObjDict
+from TTXPheno.Tools.helpers              import getCollection, getObjDict, deltaPhi, deltaR, deltaR2, cosThetaStar, closestOSDLMassToMZ, checkRootFile
+from TTXPheno.Tools.objectSelection        import isGoodGenJet, isGoodGenLepton, isGoodGenPhoton, isGoodRecoMuon, isGoodRecoElectron, isGoodRecoLepton, isGoodRecoJet, isGoodRecoPhoton, genJetId
 
 # RootTools
 from RootTools.core.standard            import *
@@ -34,6 +35,7 @@ argParser.add_argument('--pdf',                action='store',      default='1d0
 argParser.add_argument('--small',              action='store_true', default=False,                                                                   help='Run only on a small subset of the data?', )
 argParser.add_argument('--normalize',          action='store_true', default=False,                                                                   help="Normalize yields" )
 argParser.add_argument('--c',                  action='store',      default=0.1, type=float,                                                         help="BSM fraction" )
+argParser.add_argument('--mode',               action='store',      default="all", type=str,                                                         help="lepton mode" )
 args = argParser.parse_args()
 
 # Logger
@@ -43,11 +45,15 @@ logger    = logger.get_logger(   args.logLevel, logFile = None)
 logger_rt = logger_rt.get_logger(args.logLevel, logFile = None)
 
 # Samples
-from TTXPheno.samples.hepmc_samples_24_09      import *
-hepSample = ttbarZ if args.sample == "ttZ" else ttbar
+from TTXPheno.samples.hepmc_samples_11_06      import *
+hepSample = ttbarZ if args.sample == "ttZ" else ttbar#_phase2
+#tt_hepSample = ttbar
 nloXSec   = 0.0915/(0.10099) if args.sample == "ttZ" else 831.76 #inclusive NLO xsec
 
 hepSample.root_samples_dict = { name:sample for name, sample in hepSample.root_samples_dict.iteritems() if name.startswith(args.pdf+"_") or name == "PP"}
+#hepSample.root_samples_dict = { name:sample for name, sample in hepSample.root_samples_dict.iteritems() if name == "PP"}
+#hepSample.root_samples_dict.update( { name:sample for name, sample in tt_hepSample.root_samples_dict.iteritems() if name.startswith(args.pdf+"_") } )
+#hepSample.samples_dict.update( { name:sample for name, sample in tt_hepSample.samples_dict.iteritems() if name.startswith(args.pdf+"_") } )
 
 sample_directory = hepSample.name
 if args.small:     sample_directory += "_small"
@@ -64,10 +70,10 @@ def drawObjects( lumi_scale ):
     ]
     return [tex.DrawLatex(*l) for l in lines] 
 
-
 addFac = 1#000. #FIXME
 if args.normalize:
-    scaling = { i:0 for i in xrange(len(hepSample.root_samples_dict)) }
+#    scaling = { i:0 for i in range(len(hepSample.root_samples_dict.keys())+1) }
+    scaling = { 1:0 }
 else:
     sigmaC  = (1-args.c)**2*hepSample.samples_dict['PP'].xSection + \
               (1-args.c)*args.c*hepSample.samples_dict[args.pdf+'_GH'].xSection + \
@@ -79,23 +85,27 @@ else:
     hepSample.root_samples_dict[args.pdf+'_HG'].weight = lambda event, sample: addFac*nloXSec*args.c*(1-args.c)/sigmaC
     hepSample.root_samples_dict[args.pdf+'_HH'].weight = lambda event, sample: addFac*nloXSec*(args.c)**2/sigmaC
 
+    hepSample.root_samples_dict['PP'].hepmcweight =           nloXSec*(1-args.c)**2/sigmaC
+    hepSample.root_samples_dict[args.pdf+'_GH'].hepmcweight = nloXSec*args.c*(1-args.c)/sigmaC
+    hepSample.root_samples_dict[args.pdf+'_HG'].hepmcweight = nloXSec*args.c*(1-args.c)/sigmaC
+    hepSample.root_samples_dict[args.pdf+'_HH'].hepmcweight = nloXSec*(args.c)**2/sigmaC
 
 # Plotting
 def drawPlots( plots, mode ):
 
     # add signal histos to total histo
-    for plot in plots:
+#    for plot in plots:
 #        for hep_histo in plot.histos[1:-3]:
 #            plot.histos[-2][0].Add(hep_histo[0])
-        plot.histos[5][0].Add(plot.histos[2][0]) #HG
-        plot.histos[5][0].Add(plot.histos[3][0]) #GH
-        plot.histos[5][0].Add(plot.histos[4][0]) #HH
+#        plot.histos[5][0].Add(plot.histos[2][0]) #HG
+#        plot.histos[5][0].Add(plot.histos[3][0]) #GH
+#        plot.histos[5][0].Add(plot.histos[4][0]) #HH
 
     # add bg histos to all
-    for plot in plots:
-        for bg_histo in plot.histos[-1]:
-            for signal_histos in plot.histos[:-1]:
-                signal_histos[0].Add(bg_histo)
+#    for plot in plots:
+#        for bg_histo in plot.histos[-1]:
+#            for signal_histos in plot.histos[:-1]:
+#                signal_histos[0].Add(bg_histo)
 
 #    for plot in plots:
 #        for i_h, h in enumerate(plot.histos):
@@ -111,7 +121,7 @@ def drawPlots( plots, mode ):
 #                    hi.style = styles.lineStyle( colors.values()[i_h-2], width=2, dashed=True  )
 
     for log in [False, True]:
-        plot_directory_ = os.path.join( plot_directory, 'hepmc/checks_%s'%args.version, sample_directory, args.selection, args.pdf, "c%s"%str(args.c).replace(".","p"),"log" if log else "lin" )
+        plot_directory_ = os.path.join( plot_directory, 'hepmc/checks_%s'%args.version, sample_directory, args.selection, args.pdf, "c%s"%str(args.c).replace(".","p"), mode, "log" if log else "lin" )
 
         for plot in plots:
             if not max(l[0].GetMaximum() for l in plot.histos): 
@@ -203,6 +213,79 @@ read_variables += [ "recoBj1_" + var for var in recoJetVarString.split(",") ]
 
 
 
+def cleanLeptons( event, sample ):
+    recoLep = getCollection( event, 'recoLep', [ "pt", "eta", "phi", "pdgId", "sumPt", "isolationVar" ], 'nrecoLep' )
+    recoLep = list( filter( lambda l: isGoodRecoLepton( l ), recoLep ) )
+#    recoLep = list( filter( lambda l: (l["sumPt"]-l["pt"])/l["pt"] < 0.2, recoLep ) )
+    recoLep = list( filter( lambda l: l["isolationVar"] < 0.2, recoLep ) )
+
+#    recoLep.sort( key=lambda l: -l["pt"] )
+#    goodLeps = []
+#    for i_l, l1 in enumerate(recoLep):
+#        clean = True
+#        for j_l, l2 in enumerate(recoLep[:i_l]):
+#            if deltaR2(l1, l2)<0.4**2:
+#                clean = False
+#                break
+#        if clean: goodLeps.append(l1)
+
+    goodLeps = recoLep
+    event.recoLep    = goodLeps
+    event.nrecoLep   = len(goodLeps)
+#    event.recoLep_pt = []
+#    event.recoLep_pt.append(goodLeps[0]["pt"])
+#    event.recoLep_pt.append(goodLeps[1]["pt"])
+#    event.recoLep_eta = []
+#    event.recoLep_eta.append(goodLeps[0]["eta"])
+#    event.recoLep_eta.append(goodLeps[1]["eta"])
+#    event.recoLep_phi = []
+#    event.recoLep_phi.append(goodLeps[0]["phi"])
+#    event.recoLep_phi.append(goodLeps[1]["phi"])
+
+
+    event.recoZ_mass   = -999#float("nan")
+    event.recoZ_pt     = -999#float("nan")
+    event.recoZ_phi    = -999#float("nan")
+    event.recoZ_eta    = -999#float("nan")
+    event.recoZ_lldPhi = -999#float("nan")
+    event.recoZ_lldR   = -999#float("nan")
+
+    if event.nrecoLep != 1:
+        event.lumiweight1fb = 0
+        return
+
+    if event.nrecoLep > 1:
+        event.recoZ_mass, event.recoZ_l1_index, event.recoZ_l2_index = closestOSDLMassToMZ(goodLeps)
+    
+        l1 = goodLeps[event.recoZ_l1_index]
+        l2 = goodLeps[event.recoZ_l2_index]
+#        print deltaR(l1,l2), l1["pt"], l2["pt"], event.recoZ_l1_index, event.recoZ_l2_index, event.recoZ_mass
+        if event.recoZ_mass:
+                Z_l1 = ROOT.TLorentzVector()
+                Z_l1.SetPtEtaPhiM(goodLeps[event.recoZ_l1_index]['pt'], goodLeps[event.recoZ_l1_index]['eta'], goodLeps[event.recoZ_l1_index]['phi'], 0 )
+                Z_l2 = ROOT.TLorentzVector()
+                Z_l2.SetPtEtaPhiM(goodLeps[event.recoZ_l2_index]['pt'], goodLeps[event.recoZ_l2_index]['eta'], goodLeps[event.recoZ_l2_index]['phi'], 0 )
+                Z = Z_l1 + Z_l2
+                event.recoZ_pt   = Z.Pt()
+                event.recoZ_eta  = Z.Eta()
+                event.recoZ_phi  = Z.Phi()
+                event.recoZ_lldPhi = deltaPhi(goodLeps[event.recoZ_l1_index]['phi'], goodLeps[event.recoZ_l2_index]['phi'])
+                event.recoZ_lldR   = deltaR(goodLeps[event.recoZ_l1_index], goodLeps[event.recoZ_l2_index])
+                lm_index = event.recoZ_l1_index if goodLeps[event.recoZ_l1_index]['pdgId'] > 0 else event.recoZ_l2_index
+                event.recoZ_cosThetaStar = cosThetaStar(event.recoZ_mass, event.recoZ_pt, event.recoZ_eta, event.recoZ_phi, goodLeps[lm_index]['pt'], goodLeps[lm_index]['eta'], goodLeps[lm_index]['phi'] )
+
+                if event.recoZ_lldPhi < 0.1 or event.recoZ_lldR < 0.1:
+                    event.lumiweight1fb = 0
+                    return
+
+    event.recoJet = getCollection( event, 'recoJet', [ "pt", "eta", "phi", "nCharged", "nNeutrals", "bTag" ], 'nrecoJet' )
+    event.recoJet = list( filter( lambda l:isGoodRecoJet( l ), event.recoJet ) )
+    event.recoJet.sort( key=lambda l: -l["pt"] )
+    event.recoJet = list( filter( lambda j: min([999]+[deltaR2(j, p) for p in event.recoLep ])>0.4**2, event.recoJet))
+    event.nrecoJet = len( event.recoJet )
+
+    event.nBTag = len( filter( lambda j: j["bTag"], event.recoJet ) )
+
 def addBTag( event, sample ):
     event.jets = getCollection( event, 'recoJet', [ "bTag" ], 'nrecoJet' )
     event.nBTag = len( filter( lambda j: j["bTag"], event.jets ) )
@@ -222,6 +305,7 @@ def printObjects(event, sample):
 # Sequence
 sequence = [\
             addBTag,
+#            cleanLeptons,
 #            makeObservables,
 #            printObjects,
            ]
@@ -239,10 +323,11 @@ tWSample        = getattr( loadedSamples, "fwlite_tW_LO_order2_15weights_CMS" )
 tZqSample       = getattr( loadedSamples, "fwlite_tZq_LO_order2_15weights_CMS" )
 ttWSample       = getattr( loadedSamples, "fwlite_ttW_LO_order3_8weights" )
 ttgammaSample   = getattr( loadedSamples, "fwlite_ttgamma_bg_LO_order2_15weights_CMS" )
-#WJetsSample     = getattr( loadedSamples, "fwlite_WJetsToLNu_order2_15weights_CMS" )
+WJetsSample     = getattr( loadedSamples, "fwlite_WJetsToLNu_order2_15weights_CMS" )
 
 # cross section correction (t and tbar) + NLO correction
-#tWSample.weight = lambda event, sample: 2#*35.85/19.55
+WJetsSample.weight = lambda event, sample: .1
+tWSample.weight = lambda event, sample: 2
 
 if args.sample == "ttZ":
     mc = [\
@@ -265,7 +350,7 @@ else:
           tZqSample,
           tWZSample,
           tWSample,
-#          WJetsSample,
+          WJetsSample,
     ]
 
 #colors
@@ -280,6 +365,8 @@ stackList = [ ]
 
 # Sample definition
 totalSignal = []
+ttZSample.reduceFiles(to=10)
+ttSample.reduceFiles(to=10)
 stackList += [ [ttZSample if args.sample == "ttZ" else ttSample] ]
 for name, sample in hepSample.root_samples_dict.iteritems():
     if name == "PP":
@@ -292,25 +379,26 @@ for name, sample in hepSample.root_samples_dict.iteritems():
     else:
         sample.texName = "%s (%s)" %(name.split("_")[1], name.split("_")[0].split("-")[1].replace("d","."))
         sample.style   = styles.lineStyle( colors[name.split("_")[1]], width=2, dashed=True  )
-        stackList.append( [sample] )
-#    totalSignal.append(sample)
+#        stackList.append( [sample] )
+    totalSignal.append(sample)
 #stackList.append( totalSignal )
+print stackList
 
-stackList += [ [totSample] ]
-stackList += [ mc ]
+#stackList += [ [totSample] ]
+#stackList += [ mc ]
 stack = Stack( *stackList )
 
 #for sample in stack.samples:
 #    print sample.name, sample.weightString
 eventScale = 1.
-if args.small:
-    for sample in stack.samples:
-        sample.normalization=1.
-        sample.reduceFiles( factor=10 )
-        eventScale = 1./sample.normalization
+#if args.small:
+#    for sample in stack.samples:
+#        sample.normalization=1.
+#        sample.reduceFiles( factor=1 )
+#        eventScale = 1./sample.normalization
 #        sample.addWeightString(eventScale)
 
-weight_ = lambda event, sample: lumi_scale * event.lumiweight1fb
+weight_ = lambda event, sample: lumi_scale * event.lumiweight1fb / 2.5 #correct plots by hand (sorry)
 
 # Use some defaults (set defaults before you create/import list of Plots!!)
 Plot.setDefaults( stack=stack, weight=staticmethod( weight_ ), selectionString=cutInterpreter.cutString( args.selection ) )#, addOverFlowBin='upper' )
@@ -354,16 +442,16 @@ def getPlots():
       binning=[10,0,pi],
     ) )
 
-    plotList.append( Plot( name = 'dl_dPhi_det',
-      texX = '#Delta#phi(ll)', texY = "Number of Events",
-      attribute = lambda event, sample: event.recoZ_lldPhi,
-      binning=[40,0,pi],
-    ) )
-
     plotList.append( Plot( name = 'dl_dR',
       texX = '#DeltaR(ll)', texY = "Number of Events",
       attribute = lambda event, sample: event.recoZ_lldR,
       binning=[10,0,5],
+    ) )
+
+    plotList.append( Plot( name = 'dl_dPhi_det',
+      texX = '#Delta#phi(ll)', texY = "Number of Events",
+      attribute = lambda event, sample: event.recoZ_lldPhi,
+      binning=[40,0,pi],
     ) )
 
     plotList.append( Plot( name = 'dl_dR_det',
@@ -474,6 +562,30 @@ def getPlots():
       binning=[20,-pi,pi],
     ) )
 
+    plotList.append( Plot( name = 'l0_iso',
+      texX = 'isolationVar(lead lep)', texY = "Number of Events",
+      attribute = lambda event, sample: event.recoLep_isolationVar[0],
+      binning=[20,0,1.5],
+    ) )
+
+    plotList.append( Plot( name = 'l0_relIso',
+      texX = 'relIso(lead lep)', texY = "Number of Events",
+      attribute = lambda event, sample: (event.recoLep_sumPt[0]-event.recoLep_pt[0])/event.recoLep_pt[0],
+      binning=[20,0,1.5],
+    ) )
+
+    plotList.append( Plot( name = 'l0_relIso_n',
+      texX = 'relIso neutral (lead lep)', texY = "Number of Events",
+      attribute = lambda event, sample: (event.recoLep_sumPtNeutral[0]-event.recoLep_pt[0])/event.recoLep_pt[0],
+      binning=[20,0,1.5],
+    ) )
+
+    plotList.append( Plot( name = 'l0_relIso_chg',
+      texX = 'relIso chg (lead lep)', texY = "Number of Events",
+      attribute = lambda event, sample: (event.recoLep_sumPtCharged[0]-event.recoLep_pt[0])/event.recoLep_pt[0],
+      binning=[20,0,1.5],
+    ) )
+
     plotList.append( Plot( name = 'l0_eta',
       texX = '#eta(lead lep)', texY = "Number of Events",
       attribute = lambda event, sample: event.recoLep_eta[0],
@@ -486,6 +598,30 @@ def getPlots():
       binning=[20,0,300],
     ) )
     
+    plotList.append( Plot( name = 'l1_iso',
+      texX = 'isolationVar(sub-lead lep)', texY = "Number of Events",
+      attribute = lambda event, sample: event.recoLep_isolationVar[1],
+      binning=[20,0,1.5],
+    ) )
+
+    plotList.append( Plot( name = 'l1_relIso',
+      texX = 'relIso(sub-lead lep)', texY = "Number of Events",
+      attribute = lambda event, sample: (event.recoLep_sumPt[1]-event.recoLep_pt[1])/event.recoLep_pt[1],
+      binning=[20,0,1.5],
+    ) )
+
+    plotList.append( Plot( name = 'l1_relIso_n',
+      texX = 'relIso neutral (sub-lead lep)', texY = "Number of Events",
+      attribute = lambda event, sample: (event.recoLep_sumPtNeutral[1]-event.recoLep_pt[1])/event.recoLep_pt[1],
+      binning=[20,0,1.5],
+    ) )
+
+    plotList.append( Plot( name = 'l1_relIso_chg',
+      texX = 'relIso chg (sub-lead lep)', texY = "Number of Events",
+      attribute = lambda event, sample: (event.recoLep_sumPtCharged[1]-event.recoLep_pt[1])/event.recoLep_pt[1],
+      binning=[20,0,1.5],
+    ) )
+
     plotList.append( Plot( name = 'l1_phi',
       texX = '#phi(sub-lead lep)', texY = "Number of Events",
       attribute = lambda event, sample: event.recoLep_phi[1],
@@ -528,8 +664,8 @@ plots = getPlots()
 
 # Loop over channels
 allPlots = {}
-#allModes = [ 'all', 'mumumu', 'mumue', 'muee', 'eee' ]
-allModes = [ 'all' ]
+#allModes = [ 'mumu', 'mue', 'ee', 'all' ]
+allModes = [ args.mode ]
 
 for index, mode in enumerate( allModes ):
     logger.info( "Computing plots for mode %s", mode )

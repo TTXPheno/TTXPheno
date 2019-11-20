@@ -11,12 +11,16 @@ import numpy as np
 import itertools
 import operator
 
+from shutil import copyfile
+
 from math import sqrt
 # turn off graphics
 ROOT.gROOT.SetBatch( True )
 
 # RootTools
 from RootTools.core.standard import *
+
+from Analysis.Tools.MergingDirDB                import MergingDirDB
 
 from multiprocessing import Pool
 
@@ -27,10 +31,9 @@ logger    = logger.get_logger(   'DEBUG', logFile = None)
 logger_rt = logger_rt.get_logger('INFO', logFile = None)
 
 # TTXPheno
-from TTXPheno.samples.benchmarks import * 
-from TTXPheno.Tools.user import plot_directory, cardfileLocation
+from TTXPheno.samples.benchmarks        import * 
+from TTXPheno.Tools.user                import plot_directory, cardfileLocation, cache_directory
 from TTXPheno.Tools.hepMCCutInterpreter import cutInterpreter
-
 
 ROOT.gStyle.SetNumberContours(255)
 
@@ -46,7 +49,7 @@ argParser.add_argument('--small',              action='store_true', default=Fals
 argParser.add_argument('--contours',           action='store_true', help='draw 1sigma and 2sigma contour line?')
 argParser.add_argument('--binning',            action='store',     default = [10, 0.0, 0.003], type=float, nargs=3, help = "argument parameters")
 argParser.add_argument('--yRange',             action='store',     default = [0, 6], type=float, nargs=2, help = "argument parameters")
-argParser.add_argument('--cores',              action='store',     default=8, type=int, help='number of cpu cores for multicore processing')
+argParser.add_argument('--cores',              action='store',     default=1, type=int, help='number of cpu cores for multicore processing')
 argParser.add_argument('--overwrite',          action='store_true', help='overwrite datafile?')
 argParser.add_argument('--fitOnly',            action='store_true', help='plot only?')
 argParser.add_argument('--sample',             action='store',      default='ttZ', choices = ["tt", "ttZ"])
@@ -56,7 +59,6 @@ args = argParser.parse_args()
 
 lumi_scale = 136.6
 nloXSec   = 0.0915/(0.10099) if args.sample == "ttZ" else 831.76 #inclusive NLO xsec
-nloXSec  *= 1000. #FIXME
 
 if "lepSel1" in args.selection:
     from TTXPheno.Analysis.regions import recottZRegionsHepMC1l as regions
@@ -69,9 +71,15 @@ else:
     xRange = [ 0.5 * ( args.binning[2] - args.binning[1] ) ]
 
 # Samples
-from TTXPheno.samples.hepmc_samples_24_09  import *
+from TTXPheno.samples.hepmc_samples_11_06  import *
 hepSample = ttbarZ if args.sample == "ttZ" else ttbar
 hepSample.root_samples_dict = { name:sample for name, sample in hepSample.root_samples_dict.iteritems() if name.startswith(args.pdf+"_") or name == "PP"}
+
+baseDir       = os.path.join( cache_directory, "hepmc", "limits" )
+if not os.path.exists( baseDir ): os.makedirs( baseDir )
+
+cacheFileName   = os.path.join( baseDir, "calculatedLimits" )
+limitCache      = MergingDirDB( cacheFileName )
 
 sample_directory = hepSample.name
 if args.small:     sample_directory += "_small"
@@ -106,7 +114,7 @@ if not os.path.isfile('dat/' + filename) or args.overwrite:
         tZqSample       = getattr( loadedSamples, "fwlite_tZq_LO_order2_15weights_CMS" )
         ttWSample       = getattr( loadedSamples, "fwlite_ttW_LO_order3_8weights" )
         ttgammaSample   = getattr( loadedSamples, "fwlite_ttgamma_bg_LO_order2_15weights_CMS" )
-#        WJetsSample     = getattr( loadedSamples, "fwlite_WJetsToLNu_order2_15weights_CMS" )
+        WJetsSample     = getattr( loadedSamples, "fwlite_WJetsToLNu_order2_15weights_CMS" )
 
         if args.sample == "ttZ":
             bg = [\
@@ -129,13 +137,19 @@ if not os.path.isfile('dat/' + filename) or args.overwrite:
                   tZqSample,
                   tWZSample,
                   tWSample,
-                  #WJetsSample,
+                  WJetsSample,
             ]
 
         signalPP = hepSample.root_samples_dict['PP']
         signalGH = hepSample.root_samples_dict[args.pdf+'_GH']
         signalHG = hepSample.root_samples_dict[args.pdf+'_HG']
         signalHH = hepSample.root_samples_dict[args.pdf+'_HH']
+        hepmcweight = nloXSec/signalPP.xSection
+        mgSample = ttZSample if args.sample == "ttZ" else ttSample
+        mgScale = mgSample.getYieldFromDraw( weightString="lumiweight1fb", selectionString=cutInterpreter.cutString( args.selection ) )["val"]
+        ppScale = signalPP.getYieldFromDraw( weightString="lumiweight1fb*%f"%hepmcweight, selectionString=cutInterpreter.cutString( args.selection ) )["val"]
+        fancyScale = mgScale / abs(ppScale) if ppScale else 1.
+        print fancyScale
 
         signal   = [ signalPP, signalGH, signalHG, signalHH ] 
 
@@ -143,9 +157,15 @@ if not os.path.isfile('dat/' + filename) or args.overwrite:
         selectionString      = cutInterpreter.cutString(args.selection)
 
         # configure samples
-        for sample in signal + bg:
-            sample.setWeightString( 'lumiweight1fb*%f'%lumi_scale )
+        for sample in signal:
+            sample.setWeightString( 'lumiweight1fb*%f*%f/2.5'%(lumi_scale, fancyScale ) ) #correct plots by hand (sorry)
             sample.setSelectionString( selectionString )
+            print sample.weightString, sample.name
+        for sample in bg:
+            sample.setWeightString( 'lumiweight1fb*%f*%f/2.5'%(lumi_scale, 2. if sample.name == tWSample.name else .1 if sample.name == WJetsSample.name else 1.) )
+            sample.setSelectionString( selectionString )
+            print sample.weightString, sample.name
+#            if sample.name == WJetsSample.name: sample.addWeightString(".1")
 #            if sample.name == tWSample.name: sample.addWeightString("2.") #xsec correction t and tbar
         # somehow has to be separate from the next loop
         if args.small:
@@ -356,6 +376,10 @@ x68max = func.GetX( 0.989, args.binning[1], args.binning[2] )
 x95max = func.GetX( 3.84, args.binning[1], args.binning[2] )
 xmax   = func.GetX( args.yRange[1], args.binning[1], args.binning[2] )
 
+sConfig = "_".join( [args.sample, args.selection, args.pdf] )
+res = { 95:x95max, 68:x68max }
+limitCache.add( sConfig, res, overwrite=True )
+
 xhist.SetLineWidth(0)
 
 func.SetFillColor(ROOT.kWhite)
@@ -470,9 +494,11 @@ latex1.DrawLatex(0.6, 0.92, '%3.1f fb{}^{-1} (13 TeV)' % (lumi_scale))
 #latex2.DrawLatex(0.15, 0.9, 'with Stat. uncert. only' if args.statOnly else 'with YR18 syst. uncert.' if not args.noExpUnc else 'with Stat. and Theory uncert. only'),
 
 plot_directory_ = os.path.join( plot_directory, 'hepmc/NLL_%s'%args.version, sample_directory, args.selection )
+phpFile = os.path.join( os.environ["CMSSW_BASE"], "src", "RootTools", "plot", "php", "index.php" )
 
 if not os.path.isdir( plot_directory_ ):
     os.makedirs( plot_directory_ )
+    copyfile( phpFile, plot_directory_+"/index.php" )
 
 for e in [".png",".pdf",".root"]:
     cans.Print( plot_directory_ + '/' + args.pdf + e)

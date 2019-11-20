@@ -43,7 +43,7 @@ logger    = logger.get_logger(   args.logLevel, logFile = None)
 logger_rt = logger_rt.get_logger(args.logLevel, logFile = None)
 
 # Samples
-from TTXPheno.samples.hepmc_samples_24_09      import *
+from TTXPheno.samples.hepmc_samples_11_06      import *
 hepSample = ttbarZ if args.sample == "ttZ" else ttbar
 nloXSec   = 0.0915/(0.10099) if args.sample == "ttZ" else 831.76 #inclusive NLO xsec
 hepSample.root_samples_dict = { name:sample for name, sample in hepSample.root_samples_dict.iteritems() if name.startswith(args.pdf+"_") or name == "PP"}
@@ -77,6 +77,7 @@ else:
     hepSample.root_samples_dict[args.pdf+'_HG'].weight = lambda event, sample: addFac*nloXSec*args.c*(1-args.c)/sigmaC
     hepSample.root_samples_dict[args.pdf+'_HH'].weight = lambda event, sample: addFac*nloXSec*(args.c)**2/sigmaC
 
+    hepmcweight = nloXSec/hepSample.samples_dict['PP'].xSection
 
 # Plotting
 def drawPlots( plots, mode ):
@@ -239,10 +240,11 @@ tWSample        = getattr( loadedSamples, "fwlite_tW_LO_order2_15weights_CMS" )
 tZqSample       = getattr( loadedSamples, "fwlite_tZq_LO_order2_15weights_CMS" )
 ttWSample       = getattr( loadedSamples, "fwlite_ttW_LO_order3_8weights" )
 ttgammaSample   = getattr( loadedSamples, "fwlite_ttgamma_bg_LO_order2_15weights_CMS" )
-#WJetsSample     = getattr( loadedSamples, "fwlite_WJetsToLNu_order2_15weights_CMS" )
+WJetsSample     = getattr( loadedSamples, "fwlite_WJetsToLNu_order2_15weights_CMS" )
 
 # cross section correction t and tbar
-#tWSample.weight = lambda event, sample: 2.
+tWSample.weight = lambda event, sample: 2.
+WJetsSample.weight = lambda event, sample: .1
 
 if args.sample == "ttZ":
     mc = [\
@@ -265,7 +267,7 @@ else:
           tZqSample,
           tWZSample,
           tWSample,
-          #WJetsSample,
+          WJetsSample,
     ]
 
 #colors
@@ -278,19 +280,31 @@ for i, s in enumerate(mc):
 lumi_scale = 136.6
 stackList = [ ]
 
+mgSample = ttZSample if args.sample == "ttZ" else ttSample
+mgScale = mgSample.getYieldFromDraw( weightString="lumiweight1fb", selectionString=cutInterpreter.cutString( args.selection ) )["val"]
+ppScale = hepSample.root_samples_dict["PP"].getYieldFromDraw( weightString="lumiweight1fb*%f"%hepmcweight, selectionString=cutInterpreter.cutString( args.selection ) )["val"]
+fancyScale = mgScale / ppScale if ppScale else 1.
+
+#mgSample = ttZSample if args.sample == "ttZ" else ttSample
+#fancyScale = mgSample.getYieldFromDraw( weightString="lumiweight1fb", selectionString=cutInterpreter.cutString( args.selection ) )["val"]
+
 # Sample definition
 totalSignal = []
 for name, sample in hepSample.root_samples_dict.iteritems():
     if name == "PP":
         SMSample = copy.deepcopy(sample)
         SMSample.texName = args.sample + " (SM)"
+        SMSample.scale   = fancyScale #/ w if w else None
         totSample = copy.deepcopy(sample)
         totSample.texName = args.sample + " (c=%s)"%str(args.c)
+        totSample.scale   = fancyScale #/ w if w else None
         sample.texName = name
+        sample.scale   = fancyScale #/ w if w else None
         stackList.insert( 0, [sample] )
     else:
         sample.texName = "%s (%s)" %(name.split("_")[1], name.split("_")[0].split("-")[1].replace("d","."))
         sample.style   = styles.lineStyle( colors[name.split("_")[1]], width=2, dashed=True  )
+        sample.scale   = fancyScale #/ w if w else None
         stackList.append( [sample] )
 #    totalSignal.append(sample)
 #stackList.append( totalSignal )
@@ -313,7 +327,7 @@ if args.small:
         eventScale = 1./sample.normalization
         sample.addWeightString(eventScale)
 
-weight_ = lambda event, sample: lumi_scale * event.lumiweight1fb
+weight_ = lambda event, sample: lumi_scale * event.lumiweight1fb / 2.5 #scale plots by hand (sorry)
 
 # Use some defaults (set defaults before you create/import list of Plots!!)
 Plot.setDefaults( stack=stack, weight=staticmethod( weight_ ), selectionString=cutInterpreter.cutString( args.selection ), addOverFlowBin='upper' )
@@ -321,77 +335,78 @@ Plot.setDefaults( stack=stack, weight=staticmethod( weight_ ), selectionString=c
 def getPlots():
     plotList = []
 
-    plotList.append( Plot( name = "dl_pt_coarse",
-      texX = 'p_{T}(ll) [GeV]', texY = "Number of Events",
-      attribute = lambda event, sample: event.recoZ_pt,
-      binning=[5,0,500],
-    ) )
+    if "lepSel2" in args.selection:
+        plotList.append( Plot( name = "dl_pt_coarse",
+          texX = 'p_{T}(ll) [GeV]', texY = "Number of Events",
+          attribute = lambda event, sample: event.recoZ_pt,
+          binning=[5,0,500],
+        ) )
         
-    plotList.append( Plot( name = "dl_pt",
-      texX = 'p_{T}(ll) [GeV]', texY = "Number of Events",
-      attribute = lambda event, sample: event.recoZ_pt,
-      binning=[10,0,500],
-    ) )
+        plotList.append( Plot( name = "dl_pt",
+          texX = 'p_{T}(ll) [GeV]', texY = "Number of Events",
+          attribute = lambda event, sample: event.recoZ_pt,
+          binning=[10,0,500],
+        ) )
         
-    plotList.append( Plot( name = 'dl_phi',
-      texX = '#phi(ll)', texY = "Number of Events",
-      attribute = lambda event, sample: event.recoZ_phi,
-      binning=[10,-pi,pi],
-    ) )
+        plotList.append( Plot( name = 'dl_phi',
+          texX = '#phi(ll)', texY = "Number of Events",
+          attribute = lambda event, sample: event.recoZ_phi,
+          binning=[10,-pi,pi],
+        ) )
 
-    plotList.append( Plot( name = 'dl_eta',
-      texX = '#eta(ll)', texY = "Number of Events",
-      attribute = lambda event, sample: event.recoZ_eta,
-      binning=[10,-3,3],
-    ) )
+        plotList.append( Plot( name = 'dl_eta',
+          texX = '#eta(ll)', texY = "Number of Events",
+          attribute = lambda event, sample: event.recoZ_eta,
+          binning=[10,-3,3],
+        ) )
     
-    plotList.append( Plot( name = "dl_mass_onZ",
-      texX = 'm(ll) [GeV]', texY = "Number of Events",
-      attribute = lambda event, sample: event.recoZ_mass,
-      binning=[20,70,110],
-    ) )
+        plotList.append( Plot( name = "dl_mass_onZ",
+          texX = 'm(ll) [GeV]', texY = "Number of Events",
+          attribute = lambda event, sample: event.recoZ_mass,
+          binning=[20,70,110],
+        ) ) 
     
-    plotList.append( Plot( name = "dl_mass",
-      texX = 'm(ll) [GeV]', texY = "Number of Events",
-      attribute = lambda event, sample: event.recoZ_mass,
-      binning=[30,5,305],
-    ) )
+        plotList.append( Plot( name = "dl_mass",
+          texX = 'm(ll) [GeV]', texY = "Number of Events",
+          attribute = lambda event, sample: event.recoZ_mass,
+          binning=[30,5,305],
+        ) )
     
-    plotList.append( Plot( name = 'dl_dPhi_coarse',
-      texX = '#Delta#phi(ll)', texY = "Number of Events",
-      attribute = lambda event, sample: event.recoZ_lldPhi,
-      binning=[4,0,pi],
-    ) )
+        plotList.append( Plot( name = 'dl_dPhi_coarse',
+          texX = '#Delta#phi(ll)', texY = "Number of Events",
+          attribute = lambda event, sample: event.recoZ_lldPhi,
+          binning=[4,0,pi],
+        ) )
 
-    plotList.append( Plot( name = 'dl_dPhi',
-      texX = '#Delta#phi(ll)', texY = "Number of Events",
-      attribute = lambda event, sample: event.recoZ_lldPhi,
-      binning=[10,0,pi],
-    ) )
+        plotList.append( Plot( name = 'dl_dPhi',
+          texX = '#Delta#phi(ll)', texY = "Number of Events",
+          attribute = lambda event, sample: event.recoZ_lldPhi,
+          binning=[10,0,pi],
+        ) )
 
-    plotList.append( Plot( name = 'dl_dR',
-      texX = '#DeltaR(ll)', texY = "Number of Events",
-      attribute = lambda event, sample: event.recoZ_lldR,
-      binning=[10,0,5],
-    ) )
+        plotList.append( Plot( name = 'dl_dR',
+          texX = '#DeltaR(ll)', texY = "Number of Events",
+          attribute = lambda event, sample: event.recoZ_lldR,
+          binning=[10,0,5],
+        ) )
 
-    plotList.append( Plot( name = 'dl_dPhi_det',
-      texX = '#Delta#phi(ll)', texY = "Number of Events",
-      attribute = lambda event, sample: event.recoZ_lldPhi,
-      binning=[40,0,pi],
-    ) )
+        plotList.append( Plot( name = 'dl_dPhi_det',
+          texX = '#Delta#phi(ll)', texY = "Number of Events",
+          attribute = lambda event, sample: event.recoZ_lldPhi,
+          binning=[40,0,pi],
+        ) )
 
-    plotList.append( Plot( name = 'dl_dR_det',
-      texX = '#DeltaR(ll)', texY = "Number of Events",
-      attribute = lambda event, sample: event.recoZ_lldR,
-      binning=[40,0,5],
-    ) )
+        plotList.append( Plot( name = 'dl_dR_det',
+          texX = '#DeltaR(ll)', texY = "Number of Events",
+          attribute = lambda event, sample: event.recoZ_lldR,
+          binning=[40,0,5],
+        ) )
 
-    plotList.append( Plot( name = 'dl_cosThetaStar',
-      texX = 'cos#theta*(ll)', texY = "Number of Events",
-      attribute = lambda event, sample: event.recoZ_cosThetaStar,
-      binning=[10,-1,1],
-    ) )
+        plotList.append( Plot( name = 'dl_cosThetaStar',
+          texX = 'cos#theta*(ll)', texY = "Number of Events",
+          attribute = lambda event, sample: event.recoZ_cosThetaStar,
+          binning=[10,-1,1],
+        ) )
 
     plotList.append( Plot( name = "j0_pt",
       texX = 'p_{T}(lead jet) [GeV]', texY = "Number of Events",
@@ -492,26 +507,27 @@ def getPlots():
     plotList.append( Plot( name = 'l0_eta',
       texX = '#eta(lead lep)', texY = "Number of Events",
       attribute = lambda event, sample: event.recoLep_eta[0],
-      binning=[20,-3,3],
+      binning=[25,-2.5,2.5],
     ) )
     
-    plotList.append( Plot( name = 'l1_pt',
-      texX = 'p_{T}(sub-lead lep) [GeV]', texY = "Number of Events",
-      attribute = lambda event, sample: event.recoLep_pt[1],
-      binning=[20,0,300],
-    ) )
+    if "lepSel2" in args.selection:
+        plotList.append( Plot( name = 'l1_pt',
+          texX = 'p_{T}(sub-lead lep) [GeV]', texY = "Number of Events",
+          attribute = lambda event, sample: event.recoLep_pt[1],
+          binning=[20,0,300],
+        ) )
     
-    plotList.append( Plot( name = 'l1_phi',
-      texX = '#phi(sub-lead lep)', texY = "Number of Events",
-      attribute = lambda event, sample: event.recoLep_phi[1],
-      binning=[20,-pi,pi],
-    ) )
+        plotList.append( Plot( name = 'l1_phi',
+          texX = '#phi(sub-lead lep)', texY = "Number of Events",
+          attribute = lambda event, sample: event.recoLep_phi[1],
+          binning=[20,-pi,pi],
+        ) )
 
-    plotList.append( Plot( name = 'l1_eta',
-      texX = '#eta(sub-lead lep)', texY = "Number of Events",
-      attribute = lambda event, sample: event.recoLep_eta[1],
-      binning=[20,-3,3],
-    ) )
+        plotList.append( Plot( name = 'l1_eta',
+          texX = '#eta(sub-lead lep)', texY = "Number of Events",
+          attribute = lambda event, sample: event.recoLep_eta[1],
+          binning=[25,-2.5,2.5],
+        ) )
     
     plotList.append( Plot( name = "nJet",
       texX = 'N_{jets}', texY = "Number of Events",
