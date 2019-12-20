@@ -10,7 +10,8 @@ import pickle
 from math                               import isnan, ceil, pi
 
 # TTXPheno
-from TTXPheno.Tools.helpers              import getCollection, getObjDict
+from TTXPheno.Tools.helpers              import getCollection, getObjDict, deltaPhi, deltaR, deltaR2, cosThetaStar, closestOSDLMassToMZ, checkRootFile
+from TTXPheno.Tools.objectSelection        import isGoodGenJet, isGoodGenLepton, isGoodGenPhoton, isGoodRecoMuon, isGoodRecoElectron, isGoodRecoLepton, isGoodRecoJet, isGoodRecoPhoton, genJetId
 
 # RootTools
 from RootTools.core.standard            import *
@@ -44,7 +45,7 @@ logger    = logger.get_logger(   args.logLevel, logFile = None)
 logger_rt = logger_rt.get_logger(args.logLevel, logFile = None)
 
 # Samples
-from TTXPheno.samples.hepmc_samples_24_09      import *
+from TTXPheno.samples.hepmc_samples_11_06      import *
 hepSample = ttbarZ if args.sample == "ttZ" else ttbar#_phase2
 #tt_hepSample = ttbar
 nloXSec   = 0.0915/(0.10099) if args.sample == "ttZ" else 831.76 #inclusive NLO xsec
@@ -64,26 +65,26 @@ def drawObjects( lumi_scale ):
     tex.SetTextSize(0.04)
     tex.SetTextAlign(11) # align right
     lines = [
-      (0.15, 0.95, 'Higgs-PDF Sim. (%s, c=%s)'%(hepSample.name.replace("bar",""), str(args.c))), 
+      (0.15, 0.95, 'Higgs-PDF Simulation (c=%s)'%(str(args.c))), 
       (0.65, 0.95, '%3.1f fb{}^{-1} (13 TeV)' %lumi_scale)
     ]
     return [tex.DrawLatex(*l) for l in lines] 
 
-
-addFac = 1#000. #FIXME
 if args.normalize:
-    scaling = { i:0 for i in xrange(len(hepSample.root_samples_dict.keys()+1)) }
+#    scaling = { i:0 for i in range(len(hepSample.root_samples_dict.keys())+1) }
+    scaling = { 1:0 }
 else:
     sigmaC  = (1-args.c)**2*hepSample.samples_dict['PP'].xSection + \
               (1-args.c)*args.c*hepSample.samples_dict[args.pdf+'_GH'].xSection + \
               (1-args.c)*args.c*hepSample.samples_dict[args.pdf+'_HG'].xSection + \
               args.c**2*hepSample.samples_dict[args.pdf+'_HH'].xSection
 
-    hepSample.root_samples_dict['PP'].weight =           lambda event, sample: addFac*nloXSec*(1-args.c)**2/sigmaC
-    hepSample.root_samples_dict[args.pdf+'_GH'].weight = lambda event, sample: addFac*nloXSec*args.c*(1-args.c)/sigmaC
-    hepSample.root_samples_dict[args.pdf+'_HG'].weight = lambda event, sample: addFac*nloXSec*args.c*(1-args.c)/sigmaC
-    hepSample.root_samples_dict[args.pdf+'_HH'].weight = lambda event, sample: addFac*nloXSec*(args.c)**2/sigmaC
+    hepSample.root_samples_dict['PP'].weight =           lambda event, sample: nloXSec*(1-args.c)**2/sigmaC
+    hepSample.root_samples_dict[args.pdf+'_GH'].weight = lambda event, sample: nloXSec*args.c*(1-args.c)/sigmaC
+    hepSample.root_samples_dict[args.pdf+'_HG'].weight = lambda event, sample: nloXSec*args.c*(1-args.c)/sigmaC
+    hepSample.root_samples_dict[args.pdf+'_HH'].weight = lambda event, sample: nloXSec*(args.c)**2/sigmaC
 
+    hepmcweight = nloXSec/hepSample.samples_dict['PP'].xSection
 
 # Plotting
 def drawPlots( plots, mode ):
@@ -130,9 +131,10 @@ def drawPlots( plots, mode ):
 #                           ratio = {'yRange': (0.2, 1.8), 'histos':[(i,len(mc)) for i in xrange(len(mc + hepSample.root_samples_dict.values())) ], 'texY':'Ratio'},
 #	                       ratio = None,
 	                       logX = False, logY = log, sorting = True,
-	                       yRange = (0.03, "auto") if log else (0.001, "auto"),
+	                       yRange = (0.9, "auto") if log else (0.001, "auto"),
 	                       scaling = scaling if args.normalize else {},
-	                       legend = [ (0.25,0.88-0.02*sum(map(len, plot.histos)),0.9,0.88), 2],
+                           legend = [ (0.15,0.88-0.03*sum(map(len, plot.histos)),0.95,0.88), 3],
+#	                       legend = [ (0.25,0.88-0.02*sum(map(len, plot.histos)),0.9,0.88), 2],
 	                       drawObjects = drawObjects( lumi_scale ) if not args.normalize else drawObjects( lumi_scale ),
                            copyIndexPHP = True,
                          )
@@ -207,6 +209,52 @@ read_variables += [ "recoBj0_" + var for var in recoJetVarString.split(",") ]
 read_variables += [ "recoBj1_" + var for var in recoJetVarString.split(",") ]
 
 
+def addZCut( event, sample ):
+    recoLep = getCollection( event, 'recoLep', [ "pt", "eta", "phi", "pdgId", "sumPt", "isolationVar" ], 'nrecoLep' )
+    recoLep = list( filter( lambda l: isGoodRecoLepton( l ), recoLep ) )
+#    recoLep = list( filter( lambda l: (l["sumPt"]-l["pt"])/l["pt"] < 0.2, recoLep ) )
+    recoLep = list( filter( lambda l: l["isolationVar"] < 0.2, recoLep ) )
+    event.nrecoLep = len(recoLep)
+
+    event.recoZ_mass   = -999#float("nan")
+    event.recoZ_pt     = -999#float("nan")
+    event.recoZ_phi    = -999#float("nan")
+    event.recoZ_eta    = -999#float("nan")
+    event.recoZ_lldPhi = -999#float("nan")
+    event.recoZ_lldR   = -999#float("nan")
+
+    if event.nrecoLep < 2:
+        event.lumiweight1fb = 0
+        return
+
+    if event.nrecoLep > 1:
+        event.recoZ_mass, event.recoZ_l1_index, event.recoZ_l2_index = closestOSDLMassToMZ(recoLep)
+
+        l1 = recoLep[event.recoZ_l1_index]
+        l2 = recoLep[event.recoZ_l2_index]
+#        print deltaR(l1,l2), l1["pt"], l2["pt"], event.recoZ_l1_index, event.recoZ_l2_index, event.recoZ_mass
+        if event.recoZ_mass:
+                Z_l1 = ROOT.TLorentzVector()
+                Z_l1.SetPtEtaPhiM(recoLep[event.recoZ_l1_index]['pt'], recoLep[event.recoZ_l1_index]['eta'], recoLep[event.recoZ_l1_index]['phi'], 0 )
+                Z_l2 = ROOT.TLorentzVector()
+                Z_l2.SetPtEtaPhiM(recoLep[event.recoZ_l2_index]['pt'], recoLep[event.recoZ_l2_index]['eta'], recoLep[event.recoZ_l2_index]['phi'], 0 )
+                Z = Z_l1 + Z_l2
+                event.recoZ_pt   = Z.Pt()
+                event.recoZ_eta  = Z.Eta()
+                event.recoZ_phi  = Z.Phi()
+                event.recoZ_lldPhi = deltaPhi(recoLep[event.recoZ_l1_index]['phi'], recoLep[event.recoZ_l2_index]['phi'])
+                event.recoZ_lldR   = deltaR(recoLep[event.recoZ_l1_index], recoLep[event.recoZ_l2_index])
+                lm_index = event.recoZ_l1_index if recoLep[event.recoZ_l1_index]['pdgId'] > 0 else event.recoZ_l2_index
+                event.recoZ_cosThetaStar = cosThetaStar(event.recoZ_mass, event.recoZ_pt, event.recoZ_eta, event.recoZ_phi, recoLep[lm_index]['pt'], recoLep[lm_index]['eta'], recoLep[lm_index]['phi'] )
+
+                if abs(event.recoZ_mass - 91)>15:
+                    event.lumiweight1fb = 0
+                    return
+
+        else:
+           event.lumiweight1fb = 0
+
+
 
 def addBTag( event, sample ):
     event.jets = getCollection( event, 'recoJet', [ "bTag" ], 'nrecoJet' )
@@ -231,12 +279,16 @@ sequence = [\
 #            printObjects,
            ]
 
+if "onZ" in args.selection and args.sample == "ttZ":
+    sequence += [addZCut]
+
+
 # Import samples
 sample_file     = "$CMSSW_BASE/python/TTXPheno/samples/benchmarks.py"
 loadedSamples   = imp.load_source( "samples", os.path.expandvars( sample_file ) )
 
 ttZSample       = getattr( loadedSamples, "fwlite_ttZ_ll_LO_order3_8weights" )
-ttSample        = getattr( loadedSamples, "fwlite_tt_full_LO_order2_15weights_comp_CMS" )
+ttSample        = getattr( loadedSamples, "fwlite_tt_full_LO_order2_15weights_CMS" )
 WZSample        = getattr( loadedSamples, "fwlite_WZ_lep_LO_order2_15weights_CMS" )
 ZGammaSample    = getattr( loadedSamples, "fwlite_Zgamma_LO_order2_15weights_CMS" )
 tWZSample       = getattr( loadedSamples, "fwlite_tWZ_LO_order2_15weights_CMS" )
@@ -244,10 +296,12 @@ tWSample        = getattr( loadedSamples, "fwlite_tW_LO_order2_15weights_CMS" )
 tZqSample       = getattr( loadedSamples, "fwlite_tZq_LO_order2_15weights_CMS" )
 ttWSample       = getattr( loadedSamples, "fwlite_ttW_LO_order3_8weights" )
 ttgammaSample   = getattr( loadedSamples, "fwlite_ttgamma_bg_LO_order2_15weights_CMS" )
-#WJetsSample     = getattr( loadedSamples, "fwlite_WJetsToLNu_order2_15weights_CMS" )
+WJetsSample     = getattr( loadedSamples, "fwlite_WJetsToLNu_order2_15weights_CMS" )
 
+ttSample.reduceFiles(to=20)
 # cross section correction (t and tbar) + NLO correction
-#tWSample.weight = lambda event, sample: 2#*35.85/19.55
+WJetsSample.weight = lambda event, sample: .1
+tWSample.weight = lambda event, sample: 2
 
 if args.sample == "ttZ":
     mc = [\
@@ -270,36 +324,50 @@ else:
           tZqSample,
           tWZSample,
           tWSample,
-#          WJetsSample,
+          WJetsSample,
     ]
 
 #colors
 colors = {'PP':ROOT.kGreen+2, 'HH':ROOT.kOrange+10, 'HG':ROOT.kViolet+6, 'GH':ROOT.kBlue+2, 'ttZ':ROOT.kGray}
 bgcolors = [ ROOT.kRed+1, ROOT.kGreen+2, ROOT.kOrange+1, ROOT.kViolet+9, ROOT.kSpring-7, ROOT.kRed+2,  ROOT.kPink-9, ROOT.kBlue,  ROOT.kRed-7, ROOT.kRed-10, ROOT.kRed+3,  ROOT.kGreen-7, ROOT.kGreen-10 ]
 
-for i, s in enumerate(mc + [ttZSample,ttSample]):
-    s.style = styles.fillStyle( bgcolors[i] )
+mgSample = ttZSample if args.sample == "ttZ" else ttSample   
+mgSample.style = styles.fillStyle( ROOT.kRed-7 )
+#for i, s in enumerate(mc + [mgSample]):
+#    s.style = styles.fillStyle( bgcolors[i] )
 
 lumi_scale = 136.6
 stackList = [ ]
+
+mgScale = mgSample.getYieldFromDraw( weightString="lumiweight1fb", selectionString=cutInterpreter.cutString( args.selection ) )["val"]
+ppScale = hepSample.root_samples_dict["PP"].getYieldFromDraw( weightString="lumiweight1fb*%f"%hepmcweight, selectionString=cutInterpreter.cutString( args.selection ) )["val"]
+fancyScale = mgScale / ppScale if ppScale else 1.
 
 # Sample definition
 totalSignal = []
 stackList += [ [ttZSample if args.sample == "ttZ" else ttSample] ]
 for name, sample in hepSample.root_samples_dict.iteritems():
+#    w = sample.getYieldFromDraw( weightString="lumiweight1fb*%f"%sample.hepmcweight, selectionString=cutInterpreter.cutString( args.selection ) )["val"]
+#    print w
     if name == "PP":
         totSample = copy.deepcopy(sample)
         totSample.texName = args.sample + " (total)"
         totSample.style   = styles.lineStyle( ROOT.kBlack, width=3  )
+        totSample.scale   = fancyScale #/ w if w else None
         sample.texName = name
         sample.style   = styles.lineStyle( colors["PP"], width=2, dashed=True  )
+        sample.scale   = fancyScale #/ w if w else None
+#        print sample.scale
         stackList.insert( 1, [sample] )
     else:
         sample.texName = "%s (%s)" %(name.split("_")[1], name.split("_")[0].split("-")[1].replace("d","."))
         sample.style   = styles.lineStyle( colors[name.split("_")[1]], width=2, dashed=True  )
+        sample.scale   = fancyScale #/ w if w else None
+#        print sample.scale
 #        stackList.append( [sample] )
     totalSignal.append(sample)
-stackList.append( totalSignal )
+#stackList.append( totalSignal )
+#print stackList
 
 #stackList += [ [totSample] ]
 #stackList += [ mc ]
@@ -315,7 +383,7 @@ eventScale = 1.
 #        eventScale = 1./sample.normalization
 #        sample.addWeightString(eventScale)
 
-weight_ = lambda event, sample: lumi_scale * event.lumiweight1fb
+weight_ = lambda event, sample: lumi_scale * event.lumiweight1fb / 2.5 #correct plots by hand (sorry)
 
 # Use some defaults (set defaults before you create/import list of Plots!!)
 Plot.setDefaults( stack=stack, weight=staticmethod( weight_ ), selectionString=cutInterpreter.cutString( args.selection ) )#, addOverFlowBin='upper' )
@@ -455,12 +523,24 @@ def getPlots():
       binning=[20,-3,3],
     ) )
     
+    plotList.append( Plot( name = 'Met_pt_coarse',
+      texX = 'E_{T}^{miss} [GeV]', texY = "Number of Events",
+      attribute = lambda event, sample: event.recoMet_pt,
+      binning=[10,0,300],
+    ) )
+
+    plotList.append( Plot( name = 'Met_pt_wide_coarse',
+      texX = 'E_{T}^{miss} [GeV]', texY = "Number of Events",
+      attribute = lambda event, sample: event.recoMet_pt,
+      binning=[10,0,400],
+    ) )
+
     plotList.append( Plot( name = 'Met_pt',
       texX = 'E_{T}^{miss} [GeV]', texY = "Number of Events",
       attribute = lambda event, sample: event.recoMet_pt,
-      binning=[20,0,400],
+      binning=[20,0,300],
     ) )
-    
+
     plotList.append( Plot( name = 'Met_phi',
       texX = '#phi(E_{T}^{miss})', texY = "Number of Events",
       attribute = lambda event, sample: event.recoMet_phi,
@@ -525,6 +605,54 @@ def getPlots():
       texX = 'N_{#gamma}', texY = "Number of Events",
       attribute = lambda event, sample: event.nrecoPhoton,
       binning=[3,0,3],
+    ) )
+
+    plotList.append( Plot( name = 'l0_iso',
+      texX = 'isolationVar(lead lep)', texY = "Number of Events",
+      attribute = lambda event, sample: event.recoLep_isolationVar[0],
+      binning=[20,0,1.5],
+    ) )
+
+    plotList.append( Plot( name = 'l0_relIso',
+      texX = 'relIso(lead lep)', texY = "Number of Events",
+      attribute = lambda event, sample: (event.recoLep_sumPt[0]-event.recoLep_pt[0])/event.recoLep_pt[0],
+      binning=[20,0,1.5],
+    ) )
+
+    plotList.append( Plot( name = 'l0_relIso_n',
+      texX = 'relIso neutral (lead lep)', texY = "Number of Events",
+      attribute = lambda event, sample: (event.recoLep_sumPtNeutral[0]-event.recoLep_pt[0])/event.recoLep_pt[0],
+      binning=[20,0,1.5],
+    ) )
+
+    plotList.append( Plot( name = 'l0_relIso_chg',
+      texX = 'relIso chg (lead lep)', texY = "Number of Events",
+      attribute = lambda event, sample: (event.recoLep_sumPtCharged[0]-event.recoLep_pt[0])/event.recoLep_pt[0],
+      binning=[20,0,1.5],
+    ) )
+
+    plotList.append( Plot( name = 'l1_iso',
+      texX = 'isolationVar(sub-lead lep)', texY = "Number of Events",
+      attribute = lambda event, sample: event.recoLep_isolationVar[1],
+      binning=[20,0,1.5],
+    ) )
+
+    plotList.append( Plot( name = 'l1_relIso',
+      texX = 'relIso(sub-lead lep)', texY = "Number of Events",
+      attribute = lambda event, sample: (event.recoLep_sumPt[1]-event.recoLep_pt[1])/event.recoLep_pt[1],
+      binning=[20,0,1.5],
+    ) )
+
+    plotList.append( Plot( name = 'l1_relIso_n',
+      texX = 'relIso neutral (sub-lead lep)', texY = "Number of Events",
+      attribute = lambda event, sample: (event.recoLep_sumPtNeutral[1]-event.recoLep_pt[1])/event.recoLep_pt[1],
+      binning=[20,0,1.5],
+    ) )
+
+    plotList.append( Plot( name = 'l1_relIso_chg',
+      texX = 'relIso chg (sub-lead lep)', texY = "Number of Events",
+      attribute = lambda event, sample: (event.recoLep_sumPtCharged[1]-event.recoLep_pt[1])/event.recoLep_pt[1],
+      binning=[20,0,1.5],
     ) )
 
     return plotList

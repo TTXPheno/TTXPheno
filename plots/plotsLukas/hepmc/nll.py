@@ -1,6 +1,14 @@
 ''' Plot script WC parameter LogLikelihood
 '''
 
+''' 
+recottZRegionsHepMC1l = getRegions2D("recoMet_pt", [0,100,200,300,-1], "recoJet_pt[0]", [0,100,200,400,-1])# + [Region("recoZ_pt", (400, -1))]
+recottZRegionsHepMCOld = getRegions2D("recoMet_pt", [0,100,200,400,600,-1], "recoJet_pt[0]", [0,100,200,400,-1])# + [Region("recoZ_pt", (400, -1))]
+recottZRegionsHepMCBin = getRegions2D("recoMet_pt", [400,600], "recoJet_pt[0]", [0,100,200,400,-1])# + [Region("recoZ_pt", (400, -1))]
+recottZRegionsHepMCShort = getRegions2D("recoMet_pt", [0,100,200,-1], "recoJet_pt[0]", [0,100,200,400,-1])# + [Region("recoZ_pt", (400, -1))]
+recottZRegionsHepMCLong = getRegions2D("recoMet_pt", [0,100,200,300,400,500,600,-1], "recoJet_pt[0]", [0,100,200,400,-1])# + [Region("recoZ_pt", (400, -1))]
+recottZRegionsHepMCFine = getRegions2D("recoMet_pt", [0,100,200,300,400,600,-1], "recoJet_pt[0]", [0,100,200,400,-1])# + [Region("recoZ_pt", (400, -1))]
+'''
 # Standard imports 
 import sys
 import ROOT
@@ -61,7 +69,12 @@ lumi_scale = 136.6
 nloXSec   = 0.0915/(0.10099) if args.sample == "ttZ" else 831.76 #inclusive NLO xsec
 
 if "lepSel1" in args.selection:
-    from TTXPheno.Analysis.regions import recottZRegionsHepMC1l as regions
+    if   "old" in args.version:   from TTXPheno.Analysis.regions import recottZRegionsHepMCOld as regions
+    elif "bin" in args.version:   from TTXPheno.Analysis.regions import recottZRegionsHepMCBin as regions
+    elif "short" in args.version: from TTXPheno.Analysis.regions import recottZRegionsHepMCShort as regions
+    elif "long" in args.version:  from TTXPheno.Analysis.regions import recottZRegionsHepMCLong as regions
+    elif "fine" in args.version:  from TTXPheno.Analysis.regions import recottZRegionsHepMCFine as regions
+    else:                         from TTXPheno.Analysis.regions import recottZRegionsHepMC1l as regions
 else:
     from TTXPheno.Analysis.regions import recottZRegionsHepMC as regions
 
@@ -180,8 +193,7 @@ if not os.path.isfile('dat/' + filename) or args.overwrite:
         signal_btagging_uncertainty    = {}
         signal_mistagging_uncertainty  = {}
         signal_jes_uncertainty         = {}
-        signal_electronId_uncertainty  = {}
-        signal_muonId_uncertainty      = {}
+        signal_leptonId_uncertainty    = {}
 
         signal_SM_rate                  = {}
         signal_coeffList                = {}
@@ -190,8 +202,7 @@ if not os.path.isfile('dat/' + filename) or args.overwrite:
         background_btagging_uncertainty   = {}
         background_mistagging_uncertainty = {}
         background_jes_uncertainty        = {}
-        background_electronId_uncertainty = {}
-        background_muonId_uncertainty     = {}
+        background_leptonId_uncertainty   = {}
 
         nonPromptObservation              = {}
 
@@ -200,6 +211,7 @@ if not os.path.isfile('dat/' + filename) or args.overwrite:
         for i_region, region in enumerate(regions):
             # compute signal yield for this region (this is the final code)
 
+            i_r = i_region % 4
             logger.info( "At region %s", region )
 
             # signal SM
@@ -208,20 +220,17 @@ if not os.path.isfile('dat/' + filename) or args.overwrite:
             background_rate[region]                   = {}
             background_btagging_uncertainty[region]   = {}
             background_mistagging_uncertainty[region] = {}
-            background_muonId_uncertainty[region]     = {}
-            background_electronId_uncertainty[region] = {}
+            background_leptonId_uncertainty[region]   = {}
             background_jes_uncertainty[region]        = {}
 
             for i_background, background in enumerate(bg):
                 # compute bg yield for this region (this is the final code)
-
                 background_rate                   [region][background.name] = background.getYieldFromDraw( selectionString=region.cutString() )['val']
 
-                background_btagging_uncertainty   [region][background.name] = 1.1
-                background_mistagging_uncertainty [region][background.name] = 1.1
-                background_muonId_uncertainty     [region][background.name] = 1.1
-                background_electronId_uncertainty [region][background.name] = 1.1
-                background_jes_uncertainty        [region][background.name] = 1.1
+                background_jes_uncertainty        [region][background.name] = (1 + .05/(i_r+1.))*(background.name in [WZSample.name, ttZSample.name, ttWSample.name, tZqSample.name, tWZSample.name, tWSample.name]) + (1 + .1/(i_r+1.))*(background.name==ZGammaSample.name) + (1 + .08/(i_r+1.))*(background.name==WJetsSample.name)
+                background_btagging_uncertainty   [region][background.name] = (1 + .02/(i_r+1.))*(background.name in [WZSample.name, ttZSample.name, ttWSample.name, tZqSample.name, tWZSample.name, tWSample.name]) + (1 + .02/(i_r+1.))*(background.name==ZGammaSample.name) + (1 + .02/(i_r+1.))*(background.name==WJetsSample.name)
+                background_mistagging_uncertainty [region][background.name] = (1 + .01/(i_r+1.))*(background.name in [WZSample.name, ttZSample.name, ttWSample.name, tZqSample.name, tWZSample.name, tWSample.name]) + (1 + .01/(i_r+1.))*(background.name==ZGammaSample.name) + (1 + .04/(i_r+1.))*(background.name==WJetsSample.name)
+                background_leptonId_uncertainty   [region][background.name] = (1 + .015/(i_r+1.))*(background.name in [WZSample.name, ttZSample.name, ttWSample.name, tZqSample.name, tWZSample.name, tWSample.name]) + (1 + .01/(i_r+1.))*(background.name==ZGammaSample.name) + (1 + .015/(i_r+1.))*(background.name==WJetsSample.name)
 
             observation[region] = int( sum( background_rate[region].values() + [signal_SM_rate[region]] ) )
 
@@ -247,26 +256,26 @@ if not os.path.isfile('dat/' + filename) or args.overwrite:
 
             # uncertainties
             c.reset()
-            c.addUncertainty('lumi',        'lnN')
-            c.addUncertainty('JES',         'lnN')
-            c.addUncertainty('btagging',    'lnN')
-            c.addUncertainty('mistagging',  'lnN')
-            c.addUncertainty('muonId',      'lnN')
-            c.addUncertainty('electronId',  'lnN')
+            c.addUncertainty('Luminosity', 'lnN')
+            c.addUncertainty('JER',             'lnN')
+            c.addUncertainty('btagging',       'lnN')
+            c.addUncertainty('mistagging',     'lnN')
+            c.addUncertainty('LeptonID',       'lnN')
 
             signal_rate                  = {}
             for i_region, region in enumerate(regions):
+
+                i_r = i_region % 4
 
                 signal_rate[region]    = signalPP.getYieldFromDraw( selectionString=region.cutString(), weightString="%f"%(nloXSec*(1-c_var)**2/sigmaC) )['val']
                 signal_rate[region]   += signalGH.getYieldFromDraw( selectionString=region.cutString(), weightString="%f"%(nloXSec*(1-c_var)*c_var/sigmaC) )['val']
                 signal_rate[region]   += signalHG.getYieldFromDraw( selectionString=region.cutString(), weightString="%f"%(nloXSec*(1-c_var)*c_var/sigmaC) )['val']
                 signal_rate[region]   += signalHH.getYieldFromDraw( selectionString=region.cutString(), weightString="%f"%(nloXSec*c_var**2/sigmaC) )['val']
 
-                signal_btagging_uncertainty   [region] = 1.1
-                signal_mistagging_uncertainty [region] = 1.1
-                signal_muonId_uncertainty     [region] = 1.1
-                signal_electronId_uncertainty [region] = 1.1
-                signal_jes_uncertainty        [region] = 1.1
+                signal_btagging_uncertainty   [region] = 1 + .015/(i_r+1.)
+                signal_mistagging_uncertainty [region] = 1 + .01/(i_r+1.)
+                signal_leptonId_uncertainty   [region] = 1 + .01/(i_r+1.)
+                signal_jes_uncertainty        [region] = 1 + .05/(i_r+1.)
 
                 bin_name = "Region_%i" % i_region
                 nice_name = region.__str__()
@@ -276,20 +285,18 @@ if not os.path.isfile('dat/' + filename) or args.overwrite:
 
                 c.specifyExpectation( bin_name, 'signal', signal_rate[region]                                 )
 
-                c.specifyFlatUncertainty( 'lumi', 1.03 )
-                c.specifyUncertainty( 'JES',        bin_name, 'signal', signal_jes_uncertainty[region]        )
+                c.specifyFlatUncertainty( 'Luminosity', 1.026 )
+                c.specifyUncertainty( 'JER',         bin_name, 'signal', signal_jes_uncertainty[region]        )
                 c.specifyUncertainty( 'btagging',   bin_name, 'signal', signal_btagging_uncertainty[region]   )
                 c.specifyUncertainty( 'mistagging', bin_name, 'signal', signal_mistagging_uncertainty[region] )
-                c.specifyUncertainty( 'muonId',     bin_name, 'signal', signal_muonId_uncertainty[region]     )
-                c.specifyUncertainty( 'electronId', bin_name, 'signal', signal_electronId_uncertainty[region] )
+                c.specifyUncertainty( 'LeptonID',   bin_name, 'signal', signal_leptonId_uncertainty[region] )
 
                 for background in bg:
                     c.specifyExpectation( bin_name, '_'.join( background.name.split('_')[1:3] ), background_rate[region][background.name] )
-                    c.specifyUncertainty( 'JES',        bin_name, '_'.join( background.name.split('_')[1:3] ), background_jes_uncertainty[region][background.name])
-                    c.specifyUncertainty( 'btagging',   bin_name, '_'.join( background.name.split('_')[1:3] ), background_btagging_uncertainty[region][background.name])
-                    c.specifyUncertainty( 'mistagging', bin_name, '_'.join( background.name.split('_')[1:3] ), background_mistagging_uncertainty[region][background.name])
-                    c.specifyUncertainty( 'muonId',     bin_name, '_'.join( background.name.split('_')[1:3] ), background_muonId_uncertainty[region][background.name])
-                    c.specifyUncertainty( 'electronId', bin_name, '_'.join( background.name.split('_')[1:3] ), background_electronId_uncertainty[region][background.name])
+                    c.specifyUncertainty( 'JER',           bin_name, '_'.join( background.name.split('_')[1:3] ), background_jes_uncertainty[region][background.name])
+                    c.specifyUncertainty( 'btagging',     bin_name, '_'.join( background.name.split('_')[1:3] ), background_btagging_uncertainty[region][background.name])
+                    c.specifyUncertainty( 'mistagging',   bin_name, '_'.join( background.name.split('_')[1:3] ), background_mistagging_uncertainty[region][background.name])
+                    c.specifyUncertainty( 'LeptonID',     bin_name, '_'.join( background.name.split('_')[1:3] ), background_leptonId_uncertainty[region][background.name])
                     
             c.writeToFile( cardFilePath )
 
@@ -436,12 +443,12 @@ func.Draw("COSAME")
 cans.RedrawAxis()
 
 # dashed line at 1
-line5 = ROOT.TLine(args.binning[1], 0.989, args.binning[2], 0.989 )
+line5 = ROOT.TLine(args.binning[1], 0.989, xmax, 0.989 )
 line5.SetLineWidth(1)
 line5.SetLineStyle(7)
 line5.SetLineColor(ROOT.kBlack)
 # dashed line at 4
-line6 = ROOT.TLine(args.binning[1], 3.84, args.binning[2], 3.84 )
+line6 = ROOT.TLine(args.binning[1], 3.84, xmax, 3.84 )
 line6.SetLineWidth(1)
 line6.SetLineStyle(7)
 line6.SetLineColor(ROOT.kBlack)
@@ -482,8 +489,8 @@ latex1.SetTextSize(0.04)
 latex1.SetTextFont(42)
 latex1.SetTextAlign(11)
 
-latex1.DrawLatex(0.15, 0.92, 'Higgs-PDF Sim. (%s)'%(hepSample.name.replace("bar",""))),
-latex1.DrawLatex(0.6, 0.92, '%3.1f fb{}^{-1} (13 TeV)' % (lumi_scale))
+latex1.DrawLatex(0.15, 0.92, '#bf{Higgs-PDF Simulation}'),
+latex1.DrawLatex(0.6, 0.92, '#bf{%3.1f fb{}^{-1} (13 TeV)}' % (lumi_scale))
 
 #latex2 = ROOT.TLatex()
 #latex2.SetNDC()

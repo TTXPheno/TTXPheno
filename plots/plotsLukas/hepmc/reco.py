@@ -58,7 +58,7 @@ def drawObjects( lumi_scale ):
     tex.SetTextSize(0.04)
     tex.SetTextAlign(11) # align right
     lines = [
-      (0.15, 0.95, 'Higgs-PDF Sim. (%s)'%(hepSample.name.replace("bar",""))), 
+      (0.15, 0.95, 'Higgs-PDF Simulation'), 
       (0.65, 0.95, '%3.1f fb{}^{-1} (13 TeV)' %lumi_scale)
     ]
     return [tex.DrawLatex(*l) for l in lines] 
@@ -127,9 +127,10 @@ def drawPlots( plots, mode ):
                            ratio = {'yRange': (0.2, 1.8), 'histos':[(len(plot.histos)-3, len(plot.histos)-2) ], 'texY':"BSM/SM"},
 #	                       ratio = None,
 	                       logX = False, logY = log, sorting = True,
-	                       yRange = (0.03, "auto") if log else (0.001, "auto"),
+	                       yRange = (7, "auto") if log else (0.001, "auto"),
 	                       scaling = scaling if args.normalize else {},
-	                       legend = [ (0.25,0.88-0.02*sum(map(len, plot.histos)),0.9,0.88), 2],
+                           legend = [ (0.2,0.88-0.03*sum(map(len, plot.histos)),0.9,0.88), 3],
+#	                       legend = [ (0.25,0.88-0.02*sum(map(len, plot.histos)),0.9,0.88), 2],
 	                       drawObjects = drawObjects( lumi_scale ) if not args.normalize else drawObjects( lumi_scale ),
                            copyIndexPHP = True,
                          )
@@ -242,6 +243,18 @@ ttWSample       = getattr( loadedSamples, "fwlite_ttW_LO_order3_8weights" )
 ttgammaSample   = getattr( loadedSamples, "fwlite_ttgamma_bg_LO_order2_15weights_CMS" )
 WJetsSample     = getattr( loadedSamples, "fwlite_WJetsToLNu_order2_15weights_CMS" )
 
+otherSamples = [\
+          WZSample,
+          ZGammaSample,
+          ttZSample,
+          ttWSample,
+          tZqSample,
+          tWZSample,
+]
+
+other = Sample.combine("other", otherSamples)
+
+
 # cross section correction t and tbar
 tWSample.weight = lambda event, sample: 2.
 WJetsSample.weight = lambda event, sample: .1
@@ -259,15 +272,16 @@ if args.sample == "ttZ":
     ]
 else:
     mc = [\
-          WZSample,
-          ZGammaSample,
-          ttZSample,
-          ttWSample,
+#          WZSample,
+#          ZGammaSample,
+#          ttZSample,
+#          ttWSample,
 #          ttgammaSample,
-          tZqSample,
-          tWZSample,
+#          tZqSample,
+#          tWZSample,
           tWSample,
           WJetsSample,
+          other,
     ]
 
 #colors
@@ -298,14 +312,15 @@ for name, sample in hepSample.root_samples_dict.iteritems():
         totSample = copy.deepcopy(sample)
         totSample.texName = args.sample + " (c=%s)"%str(args.c)
         totSample.scale   = fancyScale #/ w if w else None
-        sample.texName = name
+        sample.texName = args.sample + " (PP)"
         sample.scale   = fancyScale #/ w if w else None
         stackList.insert( 0, [sample] )
     else:
-        sample.texName = "%s (%s)" %(name.split("_")[1], name.split("_")[0].split("-")[1].replace("d","."))
+        sample.texName = args.sample + " (%s)" %(name.split("_")[1])
         sample.style   = styles.lineStyle( colors[name.split("_")[1]], width=2, dashed=True  )
         sample.scale   = fancyScale #/ w if w else None
         stackList.append( [sample] )
+
 #    totalSignal.append(sample)
 #stackList.append( totalSignal )
 
@@ -408,10 +423,22 @@ def getPlots():
           binning=[10,-1,1],
         ) )
 
+    plotList.append( Plot( name = "j0_pt_wide_coarse",
+      texX = 'p_{T}(lead jet) [GeV]', texY = "Number of Events",
+      attribute = lambda event, sample: event.recoJet_pt[0],
+      binning=[8,30,600],
+    ) )
+
+    plotList.append( Plot( name = "j0_pt_coarse",
+      texX = 'p_{T}(lead jet) [GeV]', texY = "Number of Events",
+      attribute = lambda event, sample: event.recoJet_pt[0],
+      binning=[8,30,400],
+    ) )
+
     plotList.append( Plot( name = "j0_pt",
       texX = 'p_{T}(lead jet) [GeV]', texY = "Number of Events",
       attribute = lambda event, sample: event.recoJet_pt[0],
-      binning=[20,0,600],
+      binning=[8,30,500],
     ) )
 
     plotList.append( Plot( name = "j0_phi",
@@ -480,12 +507,24 @@ def getPlots():
       binning=[20,-3,3],
     ) )
     
-    plotList.append( Plot( name = 'Met_pt',
+#    plotList.append( Plot( name = 'Met_pt_coarse',
+#      texX = 'E_{T}^{miss} [GeV]', texY = "Number of Events",
+#      attribute = lambda event, sample: event.recoMet_pt,
+#      binning=[10,0,300],
+#    ) )
+
+    plotList.append( Plot( name = 'Met_pt_wide_coarse',
       texX = 'E_{T}^{miss} [GeV]', texY = "Number of Events",
       attribute = lambda event, sample: event.recoMet_pt,
-      binning=[20,0,400],
+      binning=[8,0,500],
     ) )
-    
+
+#    plotList.append( Plot( name = 'Met_pt',
+#      texX = 'E_{T}^{miss} [GeV]', texY = "Number of Events",
+#      attribute = lambda event, sample: event.recoMet_pt,
+#      binning=[20,0,300],
+#    ) )
+
     plotList.append( Plot( name = 'Met_phi',
       texX = '#phi(E_{T}^{miss})', texY = "Number of Events",
       attribute = lambda event, sample: event.recoMet_phi,

@@ -108,9 +108,10 @@ def drawPlots( plots, mode ):
                            ratio = {'yRange': (0.2, 1.8), 'histos':[(i,0) for i in xrange(len(hepSample.root_samples_dict)) ], 'texY':'Ratio'},
 #	                       ratio = None,
 	                       logX = False, logY = log, sorting = True,
-	                       yRange = (0.03, "auto") if log else (0.001, "auto"),
+	                       yRange = (0.9, "auto") if log else (0.001, "auto"),
 	                       scaling = scaling if args.normalize else {},
-	                       legend = [ (0.25,0.88-0.02*sum(map(len, plot.histos)),0.9,0.88), 2],
+                           legend = [ (0.15,0.88-0.03*sum(map(len, plot.histos)),0.95,0.88), 3],
+#	                       legend = [ (0.25,0.88-0.02*sum(map(len, plot.histos)),0.9,0.88), 2],
 	                       drawObjects = drawObjects( lumi_scale ) if not args.normalize else drawObjects( lumi_scale ),
                            copyIndexPHP = True,
                          )
@@ -408,12 +409,24 @@ def getPlots():
       binning=[20,-3,3],
     ) )
     
+    plotList.append( Plot( name = 'Met_pt_coarse',
+      texX = 'E_{T}^{miss} [GeV]', texY = "Number of Events",
+      attribute = lambda event, sample: event.recoMet_pt,
+      binning=[10,0,300],
+    ) )
+
+    plotList.append( Plot( name = 'Met_pt_wide_coarse',
+      texX = 'E_{T}^{miss} [GeV]', texY = "Number of Events",
+      attribute = lambda event, sample: event.recoMet_pt,
+      binning=[10,0,400],
+    ) )
+
     plotList.append( Plot( name = 'Met_pt',
       texX = 'E_{T}^{miss} [GeV]', texY = "Number of Events",
       attribute = lambda event, sample: event.recoMet_pt,
-      binning=[20,0,400],
+      binning=[20,0,300],
     ) )
-    
+
     plotList.append( Plot( name = 'Met_phi',
       texX = '#phi(E_{T}^{miss})', texY = "Number of Events",
       attribute = lambda event, sample: event.recoMet_phi,

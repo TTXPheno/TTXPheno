@@ -25,9 +25,11 @@ ROOT.gStyle.SetNumberContours(255)
 import argparse
 
 argParser = argparse.ArgumentParser(description = "Argument parser")
-argParser.add_argument('--version',            action='store',     default='v10',                    help='Appendix to plot directory')
+argParser.add_argument('--version',            action='store',     default='v11',                    help='Appendix to plot directory')
 argParser.add_argument('--selection',          action='store',     default='lepSel1-njet4p-nbjet1p', help="Specify cut.")
 argParser.add_argument('--sample',             action='store',     default='tt', choices = ["tt", "ttZ"])
+argParser.add_argument('--logy',               action='store_true')
+argParser.add_argument('--logx',               action='store_true')
 
 args = argParser.parse_args()
 
@@ -47,9 +49,11 @@ res[68] = {}
 res[95] = {}
 for i, (pdf, val) in enumerate(hepSample.root_samples_dict.iteritems()):
     pdf = pdf.split("_")[0]
-    print pdf
     pdfVal  = float(pdf.split("-")[1])
-    if int(pdfVal) == 37: continue
+    print pdfVal
+    if pdf.endswith("35"): continue
+    if pdf.endswith("42"): continue
+    if pdf.endswith("45"): continue
     sConfig = "_".join( [args.sample, args.selection, pdf] )
     
     if not limitCache.contains( sConfig ): continue
@@ -104,9 +108,6 @@ ROOT.gStyle.SetPadTopMargin(0.11)
 # Plot
 cans = ROOT.TCanvas("cans","cans",500,500)
 
-xhist68.GetXaxis().SetRangeUser( minX, maxX )
-xhist68.GetYaxis().SetRangeUser( minY*0.3, maxY*1.3 )
-
 xhist68.SetMarkerColor(ROOT.kSpring-1)
 xhist68.SetLineColor(ROOT.kSpring-1)
 xhist68.SetFillColor(ROOT.kSpring-1)
@@ -154,9 +155,13 @@ xhist68.GetYaxis().SetTitleSize(0.045)
 xhist68.GetXaxis().SetLabelSize(0.04)
 xhist68.GetYaxis().SetLabelSize(0.04)
 
+xhist68.GetXaxis().SetRangeUser( minX, maxX )
+#xhist68.GetXaxis().SetRangeUser( 0.01, 100 )
+xhist68.GetYaxis().SetRangeUser( minY/1.4 if args.logy else minY*0.3, maxY*1.3 )
+
 xhist68.Draw("AC")
 xhist95.Draw("CSAME")
-#xhist68.Draw("CSAME")
+xhist68.Draw("CSAME")
 leg.Draw("SAME")
 #func95.Draw("LOSAME")
 #func68.Draw("LOSAME")
@@ -171,8 +176,11 @@ latex1.SetTextSize(0.04)
 latex1.SetTextFont(42)
 latex1.SetTextAlign(11)
 
-latex1.DrawLatex(0.15, 0.92, 'Higgs-PDF Sim. (%s)'%(hepSample.name.replace("bar",""))),
-latex1.DrawLatex(0.6, 0.92, '%3.1f fb{}^{-1} (13 TeV)' % (lumi_scale))
+latex1.DrawLatex(0.15, 0.92 if args.logy else 0.95, '#bf{Higgs-PDF Simulation}'),
+latex1.DrawLatex(0.6, 0.92 if args.logy else 0.95, '#bf{%3.1f fb{}^{-1} (13 TeV)}' % (lumi_scale))
+#latex1.DrawLatex(0.15, 0.92 if not logy else 0.96, '#bf{Higgs-PDF Simulation}'),
+#latex1.DrawLatex(0.6, 0.92 if not logy else 0.96, '#bf{%3.1f fb{}^{-1} (13 TeV)}' % (lumi_scale))
+
 
 #latex2 = ROOT.TLatex()
 #latex2.SetNDC()
@@ -189,12 +197,12 @@ if not os.path.isdir( plot_directory_ ):
     os.makedirs( plot_directory_ )
     copyfile( phpFile, plot_directory_+"/index.php" )
 
-for logx in [False, True]:
-    for logy in [False, True]:
-
-        cans.SetLogx(int(logx))
-        cans.SetLogy(int(logy))
+#for logx in [False, True]:
+#    for logy in [False, True]:
+if True:
+        cans.SetLogx(int(args.logx))
+        cans.SetLogy(int(args.logy))
         cans.Update()
 
         for e in [".png",".pdf",".root"]:
-            cans.Print( plot_directory_ + '/limits%s%s'%("_logx" if logx else "", "_logy" if logy else "") + e)
+            cans.Print( plot_directory_ + '/limits%s%s'%("_logx" if args.logx else "", "_logy" if args.logy else "") + e)
